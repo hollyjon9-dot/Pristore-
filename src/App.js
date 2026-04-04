@@ -11,16 +11,16 @@ import {
   doc,
   setDoc,
   getDoc,
+  addDoc,
+  deleteDoc,
   collection,
   query,
   where,
   getDocs,
   onSnapshot,
-  deleteDoc,
-  arrayUnion,
 } from "firebase/firestore";
 
-// ================= FIREBASE CONFIG =================
+// ================= FIREBASE =================
 const firebaseConfig = {
   apiKey: "AIzaSyDef4V0YWxFLVNKjY8qWXPld6iLR9jWpcE",
   authDomain: "pristore-3cd7d.firebaseapp.com",
@@ -31,69 +31,67 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 
-// ================= GLOBAL CONFIG =================
+// ================= CONFIG =================
 const WEBSITE_URL = "https://pristore.vercel.app";
-const LANDING_URL = "https://pristorevideocuan.durable.site";
-const WA_LINK = "https://wa.me/message/J6LLQ7VUUGXZN1";
+const WA_ADMIN = "https://wa.me/message/J6LLQ7VUUGXZN1";
 const SAMPLE_VIDEO_LINK =
   "https://drive.google.com/drive/folders/1PKn9VQJp2_sK7C5H9GIVdZ9wmk9dD4XJ";
 
 // ================= HELPERS =================
-const getPackagePrice = (pkg) => {
-  if (pkg === "Premium") return 250000;
-  if (pkg === "Gold") return 500000;
+const nowTs = () => Date.now();
+
+const formatRp = (n) => "Rp" + Number(n || 0).toLocaleString("id-ID");
+
+const getHargaPaket = (paket) => {
+  if (paket === "Premium") return 250000;
+  if (paket === "Gold") return 500000;
   return 100000;
 };
 
-const getPackagePriceLabel = (pkg) => {
-  if (pkg === "Premium") return "Rp250.000";
-  if (pkg === "Gold") return "Rp500.000";
+const getHargaPaketLabel = (paket) => {
+  if (paket === "Premium") return "Rp250.000";
+  if (paket === "Gold") return "Rp500.000";
   return "Rp100.000";
 };
 
-const getKomisiPaket = (pkg) => {
-  if (pkg === "Premium") return 70000;
-  if (pkg === "Gold") return 200000;
+const getKomisiPaket = (paket) => {
+  if (paket === "Premium") return 70000;
+  if (paket === "Gold") return 200000;
   return 40000;
 };
-
-const formatRupiah = (n) => `Rp${Number(n || 0).toLocaleString("id-ID")}`;
-
-const safeValue = (v) => (v === undefined || v === null || v === "" ? "-" : v);
-
-const nowTs = () => Date.now();
 
 const normalizeText = (v) =>
   String(v || "")
     .trim()
     .toLowerCase();
 
-const copyText = async (text, successMessage = "Berhasil disalin.") => {
+const copyText = async (text, okMsg = "Berhasil disalin.") => {
   try {
     await navigator.clipboard.writeText(text || "");
-    alert(successMessage);
-  } catch (err) {
+    alert(okMsg);
+  } catch {
     alert("Gagal menyalin.");
   }
 };
 
-const makeNotif = (type, title, message, extra = {}) => ({
-  id: `${type}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
-  type,
+const makeNotif = (title, message) => ({
+  id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
   title,
   message,
-  createdAt: Date.now(),
-  ...extra,
+  createdAt: nowTs(),
 });
 
+const safe = (v) => (v === undefined || v === null || v === "" ? "-" : v);
+
+// ================= APP =================
 export default function App() {
-  // ================= CORE STATE =================
+  // ================= GLOBAL =================
   const [page, setPage] = useState("home");
   const [loading, setLoading] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
   const [userData, setUserData] = useState(null);
 
-  // ================= FORM STATE =================
+  // ================= FORM =================
   const [namaLengkap, setNamaLengkap] = useState("");
   const [paket, setPaket] = useState("Standar");
   const [bankNomorRekening, setBankNomorRekening] = useState("");
@@ -102,198 +100,128 @@ export default function App() {
   const [password, setPassword] = useState("");
   const [refCode, setRefCode] = useState("");
 
+  // ================= UI =================
+  const [withdrawAmount, setWithdrawAmount] = useState("");
+  const [showHistory, setShowHistory] = useState(false);
+  const [showUpgradeOptions, setShowUpgradeOptions] = useState(false);
+
   // ================= ADMIN STATE =================
   const [usersAdmin, setUsersAdmin] = useState([]);
   const [adminFeed, setAdminFeed] = useState([]);
-  const [komisiRecords, setKomisiRecords] = useState([]);
+  const [komisiRows, setKomisiRows] = useState([]);
   const [search, setSearch] = useState("");
   const [filterPaket, setFilterPaket] = useState("all");
 
-  // ================= UI STATE =================
-  const [showUpgradeOptions, setShowUpgradeOptions] = useState(false);
-  const [landingTimedOut, setLandingTimedOut] = useState(false);
-  const [landingLoaded, setLandingLoaded] = useState(false);
-  const [withdrawAmount, setWithdrawAmount] = useState("");
-  const [showWithdrawHistory, setShowWithdrawHistory] = useState(false);
-  const [showBonusHistory, setShowBonusHistory] = useState(false);
-
-  // ================= GLOBAL EFFECT =================
+  // ================= APP FEEL =================
   useEffect(() => {
     document.body.style.margin = "0";
-    document.body.style.background = "#0f172a";
+    document.body.style.background = "#020617";
     document.documentElement.style.scrollBehavior = "smooth";
   }, []);
 
-  // ambil referral dari url
+  // ================= REFERRAL ANTI HILANG =================
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const ref = params.get("ref");
-    if (ref) setRefCode(ref);
+
+    if (ref) {
+      localStorage.setItem("referral_code", ref);
+      setRefCode(ref);
+    } else {
+      const saved = localStorage.getItem("referral_code");
+      if (saved) setRefCode(saved);
+    }
   }, []);
 
-  // fallback iframe landing
-  useEffect(() => {
-    if (page !== "home") return;
-    const t = setTimeout(() => {
-      if (!landingLoaded) setLandingTimedOut(true);
-    }, 3500);
-    return () => clearTimeout(t);
-  }, [page, landingLoaded]);
-
-  // realtime admin data - users
-  useEffect(() => {
-    if (!isAdmin) return;
-
-    const unsub = onSnapshot(
-      collection(db, "users"),
-      (snap) => {
-        const all = snap.docs.map((d) => ({
-          id: d.id,
-          ...d.data(),
-        }));
-        setUsersAdmin(all);
-      },
-      (err) => console.log(err)
-    );
-
-    return () => unsub();
-  }, [isAdmin]);
-
-  // realtime admin feed
-  useEffect(() => {
-    if (!isAdmin) return;
-
-    const unsub = onSnapshot(
-      collection(db, "admin_notifications"),
-      (snap) => {
-        const rows = snap.docs.map((d) => ({
-          id: d.id,
-          ...d.data(),
-        }));
-        rows.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
-        setAdminFeed(rows);
-      },
-      (err) => console.log(err)
-    );
-
-    return () => unsub();
-  }, [isAdmin]);
-
-  // realtime komisi table
-  useEffect(() => {
-    if (!isAdmin) return;
-
-    const unsub = onSnapshot(
-      collection(db, "komisi"),
-      (snap) => {
-        const rows = snap.docs.map((d) => ({
-          id: d.id,
-          ...d.data(),
-        }));
-        rows.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
-        setKomisiRecords(rows);
-      },
-      (err) => console.log(err)
-    );
-
-    return () => unsub();
-  }, [isAdmin]);
-
-  // realtime current user
+  // ================= REALTIME CURRENT USER =================
   useEffect(() => {
     if (!auth.currentUser || isAdmin) return;
 
-    const unsub = onSnapshot(
-      doc(db, "users", auth.currentUser.uid),
-      (snap) => {
-        if (snap.exists()) {
-          setUserData({ uid: snap.id, ...snap.data() });
-        }
-      },
-      (err) => console.log(err)
-    );
+    const unsub = onSnapshot(doc(db, "users", auth.currentUser.uid), (snap) => {
+      if (snap.exists()) {
+        setUserData({ uid: snap.id, ...snap.data() });
+      }
+    });
 
     return () => unsub();
   }, [isAdmin]);
 
+  // ================= REALTIME ADMIN =================
+  useEffect(() => {
+    if (!isAdmin) return;
+
+    const unsubUsers = onSnapshot(collection(db, "users"), (snap) => {
+      const rows = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+      setUsersAdmin(rows);
+    });
+
+    const unsubFeed = onSnapshot(collection(db, "admin_notifications"), (snap) => {
+      const rows = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+      rows.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+      setAdminFeed(rows);
+    });
+
+    const unsubKomisi = onSnapshot(collection(db, "komisi"), (snap) => {
+      const rows = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+      rows.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+      setKomisiRows(rows);
+    });
+
+    return () => {
+      unsubUsers();
+      unsubFeed();
+      unsubKomisi();
+    };
+  }, [isAdmin]);
+
   // ================= HELPERS DB =================
-  const addAdminNotif = async (type, title, message, extra = {}) => {
-    try {
-      const notifRef = doc(collection(db, "admin_notifications"));
-      await setDoc(notifRef, {
-        type,
-        title,
-        message,
-        createdAt: nowTs(),
-        ...extra,
-      });
-    } catch (err) {
-      console.log(err);
-    }
+  const addAdminNotif = async (title, message, extra = {}) => {
+    await addDoc(collection(db, "admin_notifications"), {
+      title,
+      message,
+      createdAt: nowTs(),
+      ...extra,
+    });
   };
 
-  const addKomisiRecord = async ({
-    userId,
-    nama,
-    dari,
-    paketBeli,
-    jumlah,
-    sumber,
-  }) => {
-    try {
-      const recRef = doc(collection(db, "komisi"));
-      await setDoc(recRef, {
-        userId,
-        nama,
-        dari,
-        paketBeli,
-        jumlah,
-        sumber,
-        createdAt: nowTs(),
-      });
-    } catch (err) {
-      console.log(err);
-    }
+  const addKomisiRow = async (payload) => {
+    await addDoc(collection(db, "komisi"), {
+      ...payload,
+      createdAt: nowTs(),
+    });
   };
 
   const loadUserData = async (uid) => {
     const snap = await getDoc(doc(db, "users", uid));
     if (!snap.exists()) return null;
-    const full = { uid, ...snap.data() };
-    setUserData(full);
-    return full;
+    const data = { uid, ...snap.data() };
+    setUserData(data);
+    return data;
   };
 
-  const checkIsAdmin = async (authUser, emailInput) => {
-    try {
-      const emailNorm = normalizeText(emailInput);
-      const adminSnap = await getDocs(collection(db, "admin"));
+  const checkIsAdmin = async (authUser, inputEmail) => {
+    const snap = await getDocs(collection(db, "admin"));
+    let matched = false;
 
-      let matched = false;
+    snap.forEach((d) => {
+      const data = d.data() || {};
+      const byUid = normalizeText(data.uid) === normalizeText(authUser.uid);
+      const byEmail = normalizeText(data.email) === normalizeText(inputEmail);
+      const byDocId = normalizeText(d.id) === normalizeText(authUser.uid);
+      if (byUid || byEmail || byDocId) matched = true;
+    });
 
-      adminSnap.forEach((d) => {
-        const data = d.data() || {};
+    return matched;
+  };
 
-        const byUidDoc = normalizeText(d.id) === normalizeText(authUser.uid);
-        const byUidField =
-          normalizeText(data.uid) === normalizeText(authUser.uid);
-        const byEmail = normalizeText(data.email) === emailNorm;
-        const byEmailDash = normalizeText(data["e-mail"]) === emailNorm;
-
-        const roleVal = normalizeText(data.role || data.peran || "admin");
-        const roleOk =
-          roleVal === "" || roleVal === "admin" || roleVal === "superadmin";
-
-        if ((byUidDoc || byUidField || byEmail || byEmailDash) && roleOk) {
-          matched = true;
-        }
-      });
-
-      return matched;
-    } catch (err) {
-      console.log(err);
-      return false;
-    }
+  const pushCustomerNotif = async (uid, oldList, title, message) => {
+    await setDoc(
+      doc(db, "users", uid),
+      {
+        notifCustomer: [...(oldList || []), makeNotif(title, message)],
+      },
+      { merge: true }
+    );
   };
 
   const processReferralReward = async ({
@@ -302,102 +230,90 @@ export default function App() {
     sumber,
     countAsReferral,
   }) => {
-    try {
-      if (!buyerUser?.referredBy) return;
+    if (!buyerUser?.referredBy) return;
 
-      const refQuery = query(
-        collection(db, "users"),
-        where("referralCode", "==", buyerUser.referredBy)
+    const q = query(
+      collection(db, "users"),
+      where("referralCode", "==", buyerUser.referredBy)
+    );
+    const snap = await getDocs(q);
+
+    for (const d of snap.docs) {
+      const refOwner = d.data() || {};
+      const refOwnerUid = d.id;
+
+      const komisiMasuk = getKomisiPaket(paketTerbeli);
+      const komisiBaru = Number(refOwner.komisiSaldo || 0) + komisiMasuk;
+
+      await setDoc(
+        doc(db, "users", refOwnerUid),
+        {
+          komisiSaldo: komisiBaru,
+        },
+        { merge: true }
       );
-      const refSnap = await getDocs(refQuery);
 
-      for (const d of refSnap.docs) {
-        const refData = d.data() || {};
-        const komisiMasuk = getKomisiPaket(paketTerbeli);
+      await pushCustomerNotif(
+        refOwnerUid,
+        refOwner.notifCustomer || [],
+        "Komisi paket masuk",
+        `${buyerUser.namaLengkap} membeli paket ${paketTerbeli}. Komisi ${formatRp(
+          komisiMasuk
+        )} masuk ke akun kamu.`
+      );
 
-        const updates = {
-          komisiSaldo: Number(refData.komisiSaldo || 0) + komisiMasuk,
-          notifCustomer: arrayUnion(
-            makeNotif(
-              "komisi",
-              "Komisi paket masuk",
-              `${
-                buyerUser.namaLengkap
-              } membeli paket ${paketTerbeli}. Komisi ${formatRupiah(
-                komisiMasuk
-              )} masuk ke akun kamu.`
-            )
-          ),
-        };
+      await addKomisiRow({
+        refOwnerUid,
+        nama: refOwner.namaLengkap || "-",
+        dari: buyerUser.namaLengkap || "-",
+        paketBeli: paketTerbeli,
+        jumlah: komisiMasuk,
+        sumber,
+      });
 
-        await setDoc(doc(db, "users", d.id), updates, { merge: true });
+      await addAdminNotif(
+        "Komisi masuk",
+        `${refOwner.namaLengkap} mendapat komisi ${formatRp(
+          komisiMasuk
+        )} dari ${buyerUser.namaLengkap} (${paketTerbeli}).`
+      );
 
-        await addKomisiRecord({
-          userId: d.id,
-          nama: refData.namaLengkap || "-",
-          dari: buyerUser.namaLengkap || "-",
-          paketBeli: paketTerbeli,
-          jumlah: komisiMasuk,
-          sumber,
-        });
+      if (countAsReferral) {
+        const totalRekrutBaru = Number(refOwner.jumlahRekrut || 0) + 1;
+        let bonusProgressBaru = Number(refOwner.bonusProgress || 0) + 1;
+        let bonusQueueBaru = Number(refOwner.bonusQueue || 0);
 
-        await addAdminNotif(
-          "komisi",
-          "Komisi masuk",
-          `${safeValue(refData.namaLengkap)} mendapat komisi ${formatRupiah(
-            komisiMasuk
-          )} dari pembelian paket ${paketTerbeli}.`,
-          { refOwnerUid: d.id, sourceUid: buyerUser.uid || buyerUser.id }
-        );
+        if (bonusProgressBaru >= 10) {
+          bonusProgressBaru = 0;
+          bonusQueueBaru += 1;
 
-        if (countAsReferral) {
-          const progressBaru = Number(refData.bonusProgress || 0) + 1;
-          const jumlahRekrutBaru = Number(refData.jumlahRekrut || 0) + 1;
+          await addAdminNotif(
+            "Bonus referral siap dibayar",
+            `${refOwner.namaLengkap} sudah mencapai 10 referral. Siap dibayar bonus Rp100.000.`
+          );
 
-          if (progressBaru >= 10) {
-            await setDoc(
-              doc(db, "users", d.id),
-              {
-                jumlahRekrut: jumlahRekrutBaru,
-                bonusProgress: 0,
-                bonusQueue: Number(refData.bonusQueue || 0) + 1,
-                notifCustomer: arrayUnion(
-                  makeNotif(
-                    "bonus_ready",
-                    "Bonus siap dibayar",
-                    "Referral kamu sudah genap 10 orang. Bonus Rp100.000 siap dibayar admin."
-                  )
-                ),
-              },
-              { merge: true }
-            );
-
-            await addAdminNotif(
-              "bonus_ready",
-              "Bonus referral siap dibayar",
-              `${safeValue(
-                refData.namaLengkap
-              )} sudah mencapai 10 referral. Siap dibayar bonus Rp100.000.`,
-              { refOwnerUid: d.id }
-            );
-          } else {
-            await setDoc(
-              doc(db, "users", d.id),
-              {
-                jumlahRekrut: jumlahRekrutBaru,
-                bonusProgress: progressBaru,
-              },
-              { merge: true }
-            );
-          }
+          await pushCustomerNotif(
+            refOwnerUid,
+            refOwner.notifCustomer || [],
+            "Bonus siap dibayar",
+            "Referral kamu sudah genap 10 orang. Bonus Rp100.000 siap dibayar admin."
+          );
         }
+
+        await setDoc(
+          doc(db, "users", refOwnerUid),
+          {
+            jumlahRekrut: totalRekrutBaru,
+            bonusProgress: bonusProgressBaru,
+            bonusQueue: bonusQueueBaru,
+          },
+          { merge: true }
+        );
       }
-    } catch (err) {
-      console.log(err);
     }
   };
 
-  // ================= REGISTER =================
+  // ================= AUTH =================
   const register = async () => {
     try {
       if (
@@ -414,11 +330,7 @@ export default function App() {
 
       setLoading(true);
 
-      const result = await createUserWithEmailAndPassword(
-        auth,
-        email,
-        password
-      );
+      const result = await createUserWithEmailAndPassword(auth, email, password);
       const uid = result.user.uid;
       const code = "PRIS" + uid.slice(0, 6).toUpperCase();
 
@@ -432,52 +344,41 @@ export default function App() {
         referredBy: refCode || "",
         jumlahRekrut: 0,
 
-        // status pendaftaran
         status: "pending",
         registrationCreatedAt: nowTs(),
 
-        // pembayaran pendaftaran
         sudahBayar: false,
         paymentRequestSent: false,
         paymentApprovedAt: null,
 
-        // proteksi referral
         referralAdded: false,
 
-        // update paket
         upgradeRequested: false,
         upgradePackage: "",
         upgradeStatus: "",
-        upgradePaid: false,
-        upgradeRequestSent: false,
         upgradeCreatedAt: null,
         upgradeApprovedAt: null,
 
-        // komisi & bonus
         komisiSaldo: 0,
         bonusProgress: 0,
         bonusQueue: 0,
         bonusHistory: [],
 
-        // penarikan
         withdrawRequest: null,
         withdrawalHistory: [],
         totalWithdrawn: 0,
 
-        // notif customer
         notifCustomer: [],
       });
 
       await addAdminNotif(
-        "register",
         "User baru daftar",
-        `${namaLengkap} mendaftar dengan paket ${paket}.`,
-        { uid, email }
+        `${namaLengkap} mendaftar dengan paket ${paket}.`
       );
 
       await loadUserData(uid);
       setPage("dashboard");
-      alert("Pendaftaran berhasil. Silakan lanjutkan dari dashboard.");
+      alert("Pendaftaran berhasil.");
     } catch (err) {
       alert(err.message);
     } finally {
@@ -485,7 +386,6 @@ export default function App() {
     }
   };
 
-  // ================= LOGIN =================
   const login = async () => {
     try {
       if (!email || !password) {
@@ -498,17 +398,16 @@ export default function App() {
       const result = await signInWithEmailAndPassword(auth, email, password);
       const authUser = result.user;
 
-      const adminMatched = await checkIsAdmin(authUser, email);
-
-      if (adminMatched) {
+      const admin = await checkIsAdmin(authUser, email);
+      if (admin) {
         setIsAdmin(true);
         setPage("admin");
         return;
       }
 
       setIsAdmin(false);
-
       const loaded = await loadUserData(authUser.uid);
+
       if (!loaded) {
         alert("Data user tidak ditemukan.");
         await signOut(auth);
@@ -524,18 +423,14 @@ export default function App() {
     }
   };
 
-  // ================= LUPA PASSWORD =================
   const forgotPassword = () => {
-    window.open(WA_LINK, "_blank");
+    window.open(WA_ADMIN, "_blank");
   };
 
-  // ================= LOGOUT =================
   const handleLogout = async () => {
     try {
       await signOut(auth);
-    } catch (err) {
-      console.log(err);
-    }
+    } catch {}
 
     setPage("home");
     setLoading(false);
@@ -543,18 +438,17 @@ export default function App() {
     setUserData(null);
     setUsersAdmin([]);
     setAdminFeed([]);
-    setKomisiRecords([]);
+    setKomisiRows([]);
     setSearch("");
     setFilterPaket("all");
     setShowUpgradeOptions(false);
     setWithdrawAmount("");
-    setShowWithdrawHistory(false);
-    setShowBonusHistory(false);
+    setShowHistory(false);
     setEmail("");
     setPassword("");
   };
 
-  // ================= CUSTOMER - KONFIRMASI BAYAR PENDAFTARAN (WA + SISTEM) =================
+  // ================= CUSTOMER ACTIONS =================
   const handleSudahBayarDaftar = async () => {
     try {
       if (!userData?.uid) return;
@@ -569,13 +463,11 @@ export default function App() {
       );
 
       await addAdminNotif(
-        "payment_confirm",
         "Konfirmasi pembayaran masuk",
-        `${userData.namaLengkap} sudah transfer paket ${userData.paket}.`,
-        { uid: userData.uid, email: userData.email }
+        `${userData.namaLengkap} sudah transfer paket ${userData.paket}.`
       );
 
-      const text = `Halo Admin Pristore
+      const waText = `Halo Admin Pristore
 
 Saya sudah transfer 🙏
 
@@ -583,18 +475,17 @@ Nama: ${userData.namaLengkap}
 Email: ${userData.email}
 No HP: ${userData.noHp}
 Paket: ${userData.paket}
-Harga: ${getPackagePriceLabel(userData.paket)}
+Harga: ${getHargaPaketLabel(userData.paket)}
 Referral: ${userData.referredBy || "-"}
 
 Mohon di cek dan approve ya kak`;
 
-      window.open(`${WA_LINK}?text=${encodeURIComponent(text)}`, "_blank");
+      window.open(`${WA_ADMIN}?text=${encodeURIComponent(waText)}`, "_blank");
     } catch (err) {
       alert(err.message);
     }
   };
 
-  // ================= CUSTOMER - PILIH UPGRADE =================
   const chooseUpgradePackage = async (selectedPackage) => {
     try {
       if (!userData?.uid) return;
@@ -605,8 +496,6 @@ Mohon di cek dan approve ya kak`;
           upgradeRequested: true,
           upgradePackage: selectedPackage,
           upgradeStatus: "pending",
-          upgradePaid: false,
-          upgradeRequestSent: false,
           upgradeCreatedAt: nowTs(),
           upgradeApprovedAt: null,
         },
@@ -614,11 +503,27 @@ Mohon di cek dan approve ya kak`;
       );
 
       await addAdminNotif(
-        "upgrade_request",
         "Permintaan update paket",
-        `${userData.namaLengkap} meminta update ke paket ${selectedPackage}.`,
-        { uid: userData.uid, email: userData.email }
+        `${userData.namaLengkap} meminta update ke paket ${selectedPackage}.`
       );
+
+      const harga = selectedPackage === "Premium" ? "Rp250.000" : "Rp500.000";
+
+      const waText = `Halo Admin Pristore
+
+Saya ingin upgrade paket ke ${selectedPackage}
+
+📦 Paket: ${selectedPackage}
+💰 Harga: ${harga}
+
+🧾 Data saya:
+Nama: ${userData.namaLengkap}
+Email: ${userData.email}
+No HP: ${userData.noHp}
+
+Mohon diproses ya kak 🙏`;
+
+      window.open(`${WA_ADMIN}?text=${encodeURIComponent(waText)}`, "_blank");
 
       setShowUpgradeOptions(false);
     } catch (err) {
@@ -626,53 +531,6 @@ Mohon di cek dan approve ya kak`;
     }
   };
 
-  // ================= CUSTOMER - BAYAR UPDATE =================
-  const handleSudahBayarUpdate = async () => {
-    try {
-      if (!userData?.uid) return;
-
-      await setDoc(
-        doc(db, "users", userData.uid),
-        { upgradePaid: true },
-        { merge: true }
-      );
-
-      await addAdminNotif(
-        "upgrade_paid",
-        "Customer sudah bayar update paket",
-        `${userData.namaLengkap} menandai sudah membayar update paket.`,
-        { uid: userData.uid, email: userData.email }
-      );
-    } catch (err) {
-      alert(err.message);
-    }
-  };
-
-  // ================= CUSTOMER - KONFIRMASI UPDATE =================
-  const handleKonfirmasiUpdate = async () => {
-    try {
-      if (!userData?.uid) return;
-
-      await setDoc(
-        doc(db, "users", userData.uid),
-        { upgradeRequestSent: true },
-        { merge: true }
-      );
-
-      await addAdminNotif(
-        "upgrade_confirm",
-        "Konfirmasi pembayaran update paket",
-        `${userData.namaLengkap} mengirim konfirmasi pembayaran update paket ${userData.upgradePackage}.`,
-        { uid: userData.uid, email: userData.email }
-      );
-
-      alert("Konfirmasi update paket dikirim ke dashboard admin.");
-    } catch (err) {
-      alert(err.message);
-    }
-  };
-
-  // ================= CUSTOMER - TARIK SALDO =================
   const submitWithdraw = async () => {
     try {
       if (!userData?.uid) return;
@@ -695,26 +553,22 @@ Mohon di cek dan approve ya kak`;
         return;
       }
 
-      const payload = {
-        id: `wd-${Date.now()}`,
-        amount,
-        status: "pending",
-        requestedAt: nowTs(),
-      };
-
       await setDoc(
         doc(db, "users", userData.uid),
         {
-          withdrawRequest: payload,
+          withdrawRequest: {
+            id: `wd-${Date.now()}`,
+            amount,
+            status: "pending",
+            requestedAt: nowTs(),
+          },
         },
         { merge: true }
       );
 
       await addAdminNotif(
-        "withdraw_request",
         "Permintaan penarikan",
-        `${userData.namaLengkap} meminta penarikan ${formatRupiah(amount)}.`,
-        { uid: userData.uid, email: userData.email, amount }
+        `${userData.namaLengkap} meminta penarikan ${formatRp(amount)}.`
       );
 
       setWithdrawAmount("");
@@ -724,7 +578,7 @@ Mohon di cek dan approve ya kak`;
     }
   };
 
-  // ================= ADMIN - APPROVE PENDAFTARAN =================
+  // ================= ADMIN ACTIONS =================
   const approveRegistration = async (u) => {
     try {
       await setDoc(
@@ -752,10 +606,8 @@ Mohon di cek dan approve ya kak`;
       }
 
       await addAdminNotif(
-        "registration_approved",
         "Pendaftaran di-approve",
-        `${u.namaLengkap} berhasil di-approve admin.`,
-        { uid: u.id, email: u.email }
+        `${u.namaLengkap} berhasil di-approve admin.`
       );
 
       alert("Pendaftaran berhasil dikonfirmasi admin.");
@@ -764,7 +616,6 @@ Mohon di cek dan approve ya kak`;
     }
   };
 
-  // ================= ADMIN - APPROVE UPDATE =================
   const approveUpgrade = async (u) => {
     try {
       const paketBaru = u.upgradePackage;
@@ -775,8 +626,6 @@ Mohon di cek dan approve ya kak`;
           paket: paketBaru,
           upgradeStatus: "approved",
           upgradeRequested: false,
-          upgradePaid: false,
-          upgradeRequestSent: false,
           upgradeApprovedAt: nowTs(),
           upgradePackage: "",
         },
@@ -793,10 +642,8 @@ Mohon di cek dan approve ya kak`;
       }
 
       await addAdminNotif(
-        "upgrade_approved",
         "Update paket di-approve",
-        `${u.namaLengkap} berhasil update ke paket ${paketBaru}.`,
-        { uid: u.id, email: u.email }
+        `${u.namaLengkap} berhasil update ke paket ${paketBaru}.`
       );
 
       alert("Update paket berhasil dikonfirmasi admin.");
@@ -805,7 +652,6 @@ Mohon di cek dan approve ya kak`;
     }
   };
 
-  // ================= ADMIN - APPROVE BONUS =================
   const approveBonus = async (u) => {
     try {
       const queue = Number(u.bonusQueue || 0);
@@ -813,6 +659,9 @@ Mohon di cek dan approve ya kak`;
         alert("Tidak ada bonus yang siap dibayar.");
         return;
       }
+
+      const currentHistory = u.bonusHistory || [];
+      const currentNotif = u.notifCustomer || [];
 
       const historyItem = {
         id: `bonus-${Date.now()}`,
@@ -825,23 +674,21 @@ Mohon di cek dan approve ya kak`;
         doc(db, "users", u.id),
         {
           bonusQueue: queue - 1,
-          bonusHistory: arrayUnion(historyItem),
-          notifCustomer: arrayUnion(
+          bonusHistory: [...currentHistory, historyItem],
+          notifCustomer: [
+            ...currentNotif,
             makeNotif(
-              "bonus_paid",
               "Bonus sudah dibayar",
               "Bonus referral Rp100.000 sudah dibayar admin."
-            )
-          ),
+            ),
+          ],
         },
         { merge: true }
       );
 
       await addAdminNotif(
-        "bonus_paid",
         "Bonus referral dibayar",
-        `Bonus referral Rp100.000 untuk ${u.namaLengkap} sudah dibayar.`,
-        { uid: u.id, email: u.email }
+        `Bonus referral Rp100.000 untuk ${u.namaLengkap} sudah dibayar.`
       );
 
       alert("Bonus berhasil dibayar.");
@@ -850,7 +697,6 @@ Mohon di cek dan approve ya kak`;
     }
   };
 
-  // ================= ADMIN - APPROVE PENARIKAN =================
   const approveWithdraw = async (u) => {
     try {
       const req = u.withdrawRequest;
@@ -863,6 +709,9 @@ Mohon di cek dan approve ya kak`;
         alert("Nominal penarikan tidak valid.");
         return;
       }
+
+      const currentHistory = u.withdrawalHistory || [];
+      const currentNotif = u.notifCustomer || [];
 
       const historyItem = {
         id: req.id,
@@ -877,25 +726,22 @@ Mohon di cek dan approve ya kak`;
         {
           komisiSaldo: Math.max(0, komisiSaldo - amount),
           totalWithdrawn: Number(u.totalWithdrawn || 0) + amount,
-          withdrawalHistory: arrayUnion(historyItem),
+          withdrawalHistory: [...currentHistory, historyItem],
           withdrawRequest: null,
-          notifCustomer: arrayUnion(
+          notifCustomer: [
+            ...currentNotif,
             makeNotif(
-              "withdraw_approved",
               "Penarikan di-approve",
-              `Penarikan ${formatRupiah(amount)} sudah di-approve admin.`,
-              { amount }
-            )
-          ),
+              `Penarikan ${formatRp(amount)} sudah di-approve admin.`
+            ),
+          ],
         },
         { merge: true }
       );
 
       await addAdminNotif(
-        "withdraw_approved_admin",
         "Penarikan di-approve",
-        `${u.namaLengkap} berhasil ditarik ${formatRupiah(amount)}.`,
-        { uid: u.id, amount }
+        `${u.namaLengkap} berhasil ditarik ${formatRp(amount)}.`
       );
 
       alert("Penarikan berhasil di-approve.");
@@ -904,12 +750,10 @@ Mohon di cek dan approve ya kak`;
     }
   };
 
-  // ================= ADMIN - HAPUS USER =================
   const deleteUser = async (id) => {
     try {
       const ok = window.confirm("Yakin mau hapus user ini?");
       if (!ok) return;
-
       await deleteDoc(doc(db, "users", id));
       alert("User berhasil dihapus.");
     } catch (err) {
@@ -918,24 +762,19 @@ Mohon di cek dan approve ya kak`;
   };
 
   // ================= ADMIN DATA =================
-  const registrationNotifications = useMemo(() => {
+  const registrationRows = useMemo(() => {
     return usersAdmin
       .filter((u) => !u.upgradeRequested && u.status === "pending")
-      .sort(
-        (a, b) =>
-          (b.registrationCreatedAt || 0) - (a.registrationCreatedAt || 0)
-      );
+      .sort((a, b) => (b.registrationCreatedAt || 0) - (a.registrationCreatedAt || 0));
   }, [usersAdmin]);
 
-  const updateNotifications = useMemo(() => {
+  const updateRows = useMemo(() => {
     return usersAdmin
-      .filter(
-        (u) => u.upgradeRequested === true && u.upgradeStatus === "pending"
-      )
+      .filter((u) => u.upgradeRequested && u.upgradeStatus === "pending")
       .sort((a, b) => (b.upgradeCreatedAt || 0) - (a.upgradeCreatedAt || 0));
   }, [usersAdmin]);
 
-  const withdrawNotifications = useMemo(() => {
+  const withdrawRows = useMemo(() => {
     return usersAdmin
       .filter((u) => u.withdrawRequest?.status === "pending")
       .sort(
@@ -945,7 +784,7 @@ Mohon di cek dan approve ya kak`;
       );
   }, [usersAdmin]);
 
-  const bonusReadyRows = useMemo(() => {
+  const bonusRows = useMemo(() => {
     return usersAdmin
       .filter((u) => Number(u.bonusQueue || 0) > 0)
       .sort((a, b) => (b.jumlahRekrut || 0) - (a.jumlahRekrut || 0));
@@ -955,55 +794,48 @@ Mohon di cek dan approve ya kak`;
     return usersAdmin
       .filter((u) => {
         const keyword = search.toLowerCase().trim();
-
         const matchSearch =
           !keyword ||
-          u.namaLengkap?.toLowerCase().includes(keyword) ||
-          u.email?.toLowerCase().includes(keyword) ||
-          u.referralCode?.toLowerCase().includes(keyword);
+          (u.namaLengkap || "").toLowerCase().includes(keyword) ||
+          (u.email || "").toLowerCase().includes(keyword) ||
+          (u.referralCode || "").toLowerCase().includes(keyword);
 
-        const matchPackage = filterPaket === "all" || u.paket === filterPaket;
-
-        return matchSearch && matchPackage;
+        const matchPaket = filterPaket === "all" || u.paket === filterPaket;
+        return matchSearch && matchPaket;
       })
-      .sort(
-        (a, b) =>
-          (b.registrationCreatedAt || 0) - (a.registrationCreatedAt || 0)
-      );
+      .sort((a, b) => (b.registrationCreatedAt || 0) - (a.registrationCreatedAt || 0));
   }, [usersAdmin, search, filterPaket]);
 
   const totalNotif =
-    registrationNotifications.length +
-    updateNotifications.length +
-    withdrawNotifications.length +
-    bonusReadyRows.length;
+    registrationRows.length +
+    updateRows.length +
+    withdrawRows.length +
+    bonusRows.length;
 
   const totalKomisiTerbentuk = useMemo(() => {
-    return komisiRecords.reduce((sum, k) => sum + Number(k.jumlah || 0), 0);
-  }, [komisiRecords]);
+    return komisiRows.reduce((sum, row) => sum + Number(row.jumlah || 0), 0);
+  }, [komisiRows]);
 
-  const totalSaldoUser = Number(userData?.komisiSaldo || 0);
+  const totalKomisiUser = Number(userData?.komisiSaldo || 0);
   const totalBonusReady = Number(userData?.bonusQueue || 0) * 100000;
 
   // ================= STYLES =================
   const container = {
     minHeight: "100vh",
-    background: "linear-gradient(135deg,#0f172a,#1e293b)",
-    display: "flex",
-    justifyContent: "center",
-    alignItems: "flex-start",
+    background: "linear-gradient(180deg,#0f172a,#020617)",
     color: "white",
     padding: 16,
     boxSizing: "border-box",
   };
 
   const card = {
-    background: "rgba(30,41,59,0.96)",
+    background: "rgba(30,41,59,0.95)",
     padding: 20,
-    borderRadius: 18,
+    borderRadius: 20,
     width: "100%",
-    maxWidth: 380,
-    boxShadow: "0 10px 25px rgba(0,0,0,0.3)",
+    maxWidth: 420,
+    margin: "0 auto",
+    boxShadow: "0 10px 30px rgba(0,0,0,0.4)",
     boxSizing: "border-box",
   };
 
@@ -1013,13 +845,12 @@ Mohon di cek dan approve ya kak`;
     padding: 16,
     marginBottom: 14,
     boxShadow: "0 8px 20px rgba(0,0,0,0.25)",
-    transition: "0.2s",
     boxSizing: "border-box",
   };
 
   const sectionTitle = {
     margin: "0 0 14px 0",
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: 700,
   };
 
@@ -1028,12 +859,12 @@ Mohon di cek dan approve ya kak`;
     padding: 14,
     marginBottom: 12,
     borderRadius: 12,
-    border: "1px solid #334155",
-    background: "#0f172a",
+    border: "1px solid #1e293b",
+    background: "#020617",
     color: "white",
-    outline: "none",
-    boxSizing: "border-box",
     fontSize: 14,
+    boxSizing: "border-box",
+    outline: "none",
   };
 
   const select = {
@@ -1043,176 +874,67 @@ Mohon di cek dan approve ya kak`;
 
   const btn = {
     width: "100%",
-    minHeight: 48,
     padding: 14,
+    borderRadius: 12,
+    border: "none",
+    background: "linear-gradient(90deg,#22c55e,#16a34a)",
+    color: "white",
+    fontWeight: "bold",
+    fontSize: 15,
     marginTop: 10,
-    borderRadius: 14,
-    border: "none",
-    background: "linear-gradient(135deg,#22c55e,#16a34a)",
-    color: "white",
-    cursor: "pointer",
-    fontWeight: 700,
-    fontSize: 14,
-    transition: "0.15s",
+    minHeight: 48,
     boxSizing: "border-box",
-  };
-
-  const btnSecondary = {
-    ...btn,
-    background: "#334155",
-  };
-
-  const btnBlue = {
-    ...btn,
-    background: "#2563eb",
-  };
-
-  const btnGold = {
-    ...btn,
-    background: "#d97706",
-  };
-
-  const btnPink = {
-    ...btn,
-    background: "#db2777",
-  };
-
-  const btnDanger = {
-    ...btn,
-    background: "#dc2626",
-  };
-
-  const backBtn = {
-    marginBottom: 12,
-    background: "#334155",
-    color: "white",
-    padding: 10,
-    border: "none",
-    borderRadius: 10,
     cursor: "pointer",
   };
 
-  const paymentBox = {
-    background: "#0f172a",
-    padding: 14,
+  const btnOrange = { ...btn, background: "#ea580c" };
+  const btnBlue = { ...btn, background: "#2563eb" };
+  const btnDark = { ...btn, background: "#334155" };
+  const btnGold = { ...btn, background: "#d97706" };
+  const btnPink = { ...btn, background: "#db2777" };
+
+  const appBox = {
+    background: "#020617",
     borderRadius: 14,
-    marginBottom: 10,
+    padding: 14,
     border: "1px solid rgba(255,255,255,0.05)",
     lineHeight: 1.7,
-  };
-
-  const pressProps = {
-    onTouchStart: (e) => {
-      e.currentTarget.style.opacity = "0.7";
-    },
-    onTouchEnd: (e) => {
-      e.currentTarget.style.opacity = "1";
-    },
-    onMouseDown: (e) => {
-      e.currentTarget.style.transform = "scale(0.98)";
-    },
-    onMouseUp: (e) => {
-      e.currentTarget.style.transform = "scale(1)";
-    },
   };
 
   // ================= HOME =================
   if (page === "home") {
     return (
-      <div
-        style={{
-          position: "relative",
-          minHeight: "100vh",
-          background: "#0f172a",
-        }}
-      >
-        {!landingTimedOut && (
-          <iframe
-            src={LANDING_URL}
-            title="Landing Page Pristore"
+      <div style={container}>
+        <div style={card}>
+          <h2 style={{ marginTop: 0, marginBottom: 8, textAlign: "center" }}>
+            PRISTORE
+          </h2>
+          <p
             style={{
-              width: "100%",
-              height: "100vh",
-              border: "none",
-              display: "block",
-            }}
-            onLoad={() => setLandingLoaded(true)}
-          />
-        )}
-
-        {landingTimedOut && (
-          <div
-            style={{
-              minHeight: "100vh",
-              background: "linear-gradient(135deg,#0f172a,#1e293b)",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              color: "white",
+              marginTop: 0,
+              marginBottom: 16,
+              opacity: 0.85,
+              fontSize: 14,
               textAlign: "center",
-              padding: 20,
             }}
           >
-            <div>
-              <h2 style={{ marginBottom: 10 }}>PRISTORE</h2>
-              <p style={{ opacity: 0.85 }}>
-                Landing page tidak bisa ditampilkan langsung. Gunakan tombol di
-                bawah.
-              </p>
-              <a
-                href={LANDING_URL}
-                target="_blank"
-                rel="noreferrer"
-                style={{
-                  display: "inline-block",
-                  marginTop: 14,
-                  padding: "12px 18px",
-                  borderRadius: 10,
-                  background: "#22c55e",
-                  color: "white",
-                  textDecoration: "none",
-                  fontWeight: 700,
-                }}
-              >
-                Buka Landing Page
-              </a>
-            </div>
-          </div>
-        )}
+            Login atau daftar untuk masuk ke dashboard.
+          </p>
 
-        <div
-          style={{
-            position: "absolute",
-            inset: 0,
-            background: "rgba(0,0,0,0.42)",
-            display: "flex",
-            justifyContent: "center",
-            alignItems: "center",
-            padding: 16,
-          }}
-        >
-          <div style={{ ...card, textAlign: "center" }}>
-            <h2 style={{ marginTop: 0, marginBottom: 8 }}>PRISTORE</h2>
-            <p style={{ marginTop: 0, opacity: 0.82, fontSize: 14 }}>
-              Login atau daftar untuk masuk ke dashboard.
-            </p>
+          <button
+            style={btnOrange}
+            onClick={() => window.open(SAMPLE_VIDEO_LINK, "_blank")}
+          >
+            🎥 Sample Video
+          </button>
 
-            <button
-              style={btn}
-              onClick={() => setPage("login")}
-              {...pressProps}
-            >
-              Login
-            </button>
+          <button style={btn} onClick={() => setPage("login")}>
+            Login
+          </button>
 
-            <button
-              style={btnSecondary}
-              onClick={() => setPage("register")}
-              {...pressProps}
-            >
-              Daftar
-            </button>
-          </div>
+          <button style={btnDark} onClick={() => setPage("register")}>
+            Daftar
+          </button>
         </div>
       </div>
     );
@@ -1223,19 +945,21 @@ Mohon di cek dan approve ya kak`;
     return (
       <div style={container}>
         <div style={card}>
-          <button style={backBtn} onClick={() => setPage("home")}>
+          <button
+            style={{ ...btnDark, width: 120, marginTop: 0, marginBottom: 16 }}
+            onClick={() => setPage("home")}
+          >
             ← Kembali
           </button>
 
           <button
-            style={{ ...btnGold, marginTop: 0, marginBottom: 10 }}
+            style={{ ...btnOrange, marginTop: 0, marginBottom: 16 }}
             onClick={() => window.open(SAMPLE_VIDEO_LINK, "_blank")}
-            {...pressProps}
           >
             🎥 Sample Video
           </button>
 
-          <h3 style={{ marginTop: 0 }}>Login</h3>
+          <h2 style={{ marginTop: 0, marginBottom: 16 }}>Login</h2>
 
           <input
             style={input}
@@ -1252,32 +976,26 @@ Mohon di cek dan approve ya kak`;
             onChange={(e) => setPassword(e.target.value)}
           />
 
-          <button
-            style={btn}
-            onClick={login}
-            disabled={loading}
-            {...pressProps}
-          >
+          <button style={btn} onClick={login} disabled={loading}>
             {loading ? "Memproses..." : "Masuk"}
           </button>
 
           <p
             style={{
-              marginTop: 12,
-              fontSize: 13,
+              marginTop: 16,
               color: "#60a5fa",
-              cursor: "pointer",
               fontWeight: 700,
+              cursor: "pointer",
             }}
             onClick={forgotPassword}
           >
             Lupa password?
           </p>
 
-          <p style={{ marginTop: 14, fontSize: 12 }}>
+          <p style={{ marginTop: 10, fontSize: 14 }}>
             Belum punya akun?{" "}
             <span
-              style={{ color: "#22c55e", cursor: "pointer", fontWeight: 700 }}
+              style={{ color: "#22c55e", fontWeight: 700, cursor: "pointer" }}
               onClick={() => setPage("register")}
             >
               Daftar
@@ -1293,11 +1011,14 @@ Mohon di cek dan approve ya kak`;
     return (
       <div style={container}>
         <div style={card}>
-          <button style={backBtn} onClick={() => setPage("home")}>
+          <button
+            style={{ ...btnDark, width: 120, marginTop: 0, marginBottom: 16 }}
+            onClick={() => setPage("home")}
+          >
             ← Kembali
           </button>
 
-          <h3 style={{ marginTop: 0 }}>Daftar</h3>
+          <h2 style={{ marginTop: 0, marginBottom: 16 }}>Daftar</h2>
 
           <input
             style={input}
@@ -1347,24 +1068,19 @@ Mohon di cek dan approve ya kak`;
 
           <input
             style={input}
-            placeholder="Kode Referral"
             value={refCode}
-            onChange={(e) => setRefCode(e.target.value)}
+            disabled
+            placeholder="Kode Referral"
           />
 
-          <button
-            style={btn}
-            onClick={register}
-            disabled={loading}
-            {...pressProps}
-          >
+          <button style={btn} onClick={register} disabled={loading}>
             {loading ? "Memproses..." : "Daftar"}
           </button>
 
-          <p style={{ marginTop: 14, fontSize: 12 }}>
+          <p style={{ marginTop: 10, fontSize: 14 }}>
             Sudah punya akun?{" "}
             <span
-              style={{ color: "#22c55e", cursor: "pointer", fontWeight: 700 }}
+              style={{ color: "#22c55e", fontWeight: 700, cursor: "pointer" }}
               onClick={() => setPage("login")}
             >
               Login
@@ -1375,14 +1091,14 @@ Mohon di cek dan approve ya kak`;
     );
   }
 
-  // ================= ADMIN DASHBOARD =================
+  // ================= ADMIN =================
   if (page === "admin") {
     return (
       <div
         style={{
-          padding: 16,
-          background: "linear-gradient(135deg,#f8fafc,#e2e8f0)",
           minHeight: "100vh",
+          background: "linear-gradient(180deg,#f8fafc,#e2e8f0)",
+          padding: 16,
           color: "#111827",
           boxSizing: "border-box",
         }}
@@ -1391,8 +1107,8 @@ Mohon di cek dan approve ya kak`;
           <div
             style={{
               background: "white",
-              padding: 18,
               borderRadius: 18,
+              padding: 18,
               marginBottom: 18,
               boxShadow: "0 12px 30px rgba(15,23,42,0.08)",
               display: "flex",
@@ -1405,7 +1121,7 @@ Mohon di cek dan approve ya kak`;
             <div>
               <h1 style={{ margin: 0, fontSize: 24 }}>Admin Dashboard</h1>
               <p style={{ margin: "6px 0 0 0", color: "#475569" }}>
-                Kelola pendaftaran, komisi, bonus, penarikan, dan semua user.
+                Kelola pendaftaran, update paket, komisi, bonus, penarikan, dan semua user.
               </p>
             </div>
 
@@ -1433,383 +1149,124 @@ Mohon di cek dan approve ya kak`;
               marginBottom: 18,
             }}
           >
-            <div
-              style={{
-                background: "white",
-                borderRadius: 18,
-                padding: 16,
-                boxShadow: "0 12px 30px rgba(15,23,42,0.08)",
-              }}
-            >
-              <h3 style={{ marginTop: 0 }}>🔔 Notifikasi</h3>
-              <p style={{ margin: 0, fontSize: 28, fontWeight: 800 }}>
-                {totalNotif}
-              </p>
-            </div>
-
-            <div
-              style={{
-                background: "white",
-                borderRadius: 18,
-                padding: 16,
-                boxShadow: "0 12px 30px rgba(15,23,42,0.08)",
-              }}
-            >
-              <h3 style={{ marginTop: 0 }}>👥 Total User</h3>
-              <p style={{ margin: 0, fontSize: 28, fontWeight: 800 }}>
-                {usersAdmin.length}
-              </p>
-            </div>
-
-            <div
-              style={{
-                background: "white",
-                borderRadius: 18,
-                padding: 16,
-                boxShadow: "0 12px 30px rgba(15,23,42,0.08)",
-              }}
-            >
-              <h3 style={{ marginTop: 0 }}>💰 Total Komisi</h3>
-              <p style={{ margin: 0, fontSize: 28, fontWeight: 800 }}>
-                {formatRupiah(totalKomisiTerbentuk)}
-              </p>
-            </div>
+            <StatCard title="🔔 Notifikasi" value={totalNotif} />
+            <StatCard title="👥 Total User" value={usersAdmin.length} />
+            <StatCard title="💰 Total Komisi" value={formatRp(totalKomisiTerbentuk)} />
           </div>
 
-          <div
-            style={{
-              background: "white",
-              borderRadius: 18,
-              padding: 16,
-              marginBottom: 18,
-              boxShadow: "0 12px 30px rgba(15,23,42,0.08)",
-            }}
-          >
-            <h2 style={{ marginTop: 0 }}>🔔 Feed Notifikasi Admin</h2>
-
+          <SectionCard title="🔔 Feed Notifikasi Admin">
             {adminFeed.length === 0 ? (
               <p>Tidak ada notifikasi.</p>
             ) : (
-              adminFeed.slice(0, 20).map((n) => (
-                <div
-                  key={n.id}
-                  style={{
-                    border: "1px solid #e2e8f0",
-                    borderRadius: 14,
-                    padding: 14,
-                    marginBottom: 12,
-                  }}
-                >
-                  <p style={{ margin: "0 0 6px 0", fontWeight: 700 }}>
-                    {safeValue(n.title)}
-                  </p>
-                  <p style={{ margin: "0 0 6px 0" }}>{safeValue(n.message)}</p>
-                </div>
+              adminFeed.slice(0, 25).map((n) => (
+                <DataCard key={n.id}>
+                  <p style={{ margin: "0 0 6px 0", fontWeight: 700 }}>{n.title}</p>
+                  <p style={{ margin: 0 }}>{n.message}</p>
+                </DataCard>
               ))
             )}
-          </div>
+          </SectionCard>
 
-          <div
-            style={{
-              background: "white",
-              borderRadius: 18,
-              padding: 16,
-              marginBottom: 18,
-              boxShadow: "0 12px 30px rgba(15,23,42,0.08)",
-            }}
-          >
-            <h2 style={{ marginTop: 0 }}>📥 Pendaftaran Baru</h2>
-
-            {registrationNotifications.length === 0 ? (
+          <SectionCard title="📥 Pendaftaran Baru">
+            {registrationRows.length === 0 ? (
               <p>Tidak ada pendaftaran baru.</p>
             ) : (
-              registrationNotifications.map((u) => {
+              registrationRows.map((u) => {
                 const siapApprove = u.sudahBayar && u.paymentRequestSent;
-
                 return (
-                  <div
-                    key={u.id}
-                    style={{
-                      border: "1px solid #e2e8f0",
-                      borderRadius: 14,
-                      padding: 14,
-                      marginBottom: 12,
-                    }}
-                  >
-                    <p style={{ margin: "0 0 6px 0", fontWeight: 700 }}>
-                      {safeValue(u.namaLengkap)}
-                    </p>
-                    <p style={{ margin: "0 0 6px 0" }}>{safeValue(u.email)}</p>
-                    <p style={{ margin: "0 0 10px 0" }}>
-                      Paket: {safeValue(u.paket)}
-                    </p>
+                  <DataCard key={u.id}>
+                    <p style={{ margin: "0 0 6px 0", fontWeight: 700 }}>{u.namaLengkap}</p>
+                    <p style={{ margin: "4px 0" }}>{u.email}</p>
+                    <p style={{ margin: "4px 0" }}>Paket: {u.paket}</p>
 
                     {siapApprove ? (
-                      <button
-                        onClick={() => approveRegistration(u)}
-                        style={{
-                          background: "#16a34a",
-                          color: "white",
-                          border: "none",
-                          borderRadius: 10,
-                          padding: "10px 14px",
-                          fontWeight: 700,
-                          cursor: "pointer",
-                        }}
-                      >
+                      <ActionButton color="#16a34a" onClick={() => approveRegistration(u)}>
                         Approve
-                      </button>
+                      </ActionButton>
                     ) : (
-                      <button
-                        disabled
-                        style={{
-                          background: "#cbd5e1",
-                          color: "#475569",
-                          border: "none",
-                          borderRadius: 10,
-                          padding: "10px 14px",
-                          fontWeight: 700,
-                        }}
-                      >
+                      <ActionButton color="#cbd5e1" textColor="#475569">
                         Menunggu customer
-                      </button>
+                      </ActionButton>
                     )}
-                  </div>
+                  </DataCard>
                 );
               })
             )}
-          </div>
+          </SectionCard>
 
-          <div
-            style={{
-              background: "white",
-              borderRadius: 18,
-              padding: 16,
-              marginBottom: 18,
-              boxShadow: "0 12px 30px rgba(15,23,42,0.08)",
-            }}
-          >
-            <h2 style={{ marginTop: 0 }}>🔄 Update Paket</h2>
-
-            {updateNotifications.length === 0 ? (
+          <SectionCard title="🔄 Update Paket">
+            {updateRows.length === 0 ? (
               <p>Tidak ada permintaan update paket.</p>
             ) : (
-              updateNotifications.map((u) => {
-                const siapApprove = u.upgradePaid && u.upgradeRequestSent;
-
-                return (
-                  <div
-                    key={u.id}
-                    style={{
-                      border: "1px solid #e2e8f0",
-                      borderRadius: 14,
-                      padding: 14,
-                      marginBottom: 12,
-                    }}
-                  >
-                    <p style={{ margin: "0 0 6px 0", fontWeight: 700 }}>
-                      {safeValue(u.namaLengkap)}
-                    </p>
-                    <p style={{ margin: "0 0 6px 0" }}>{safeValue(u.email)}</p>
-                    <p style={{ margin: "0 0 10px 0" }}>
-                      Update ke: {safeValue(u.upgradePackage)}
-                    </p>
-
-                    {siapApprove ? (
-                      <button
-                        onClick={() => approveUpgrade(u)}
-                        style={{
-                          background: "#2563eb",
-                          color: "white",
-                          border: "none",
-                          borderRadius: 10,
-                          padding: "10px 14px",
-                          fontWeight: 700,
-                          cursor: "pointer",
-                        }}
-                      >
-                        Approve Update
-                      </button>
-                    ) : (
-                      <button
-                        disabled
-                        style={{
-                          background: "#cbd5e1",
-                          color: "#475569",
-                          border: "none",
-                          borderRadius: 10,
-                          padding: "10px 14px",
-                          fontWeight: 700,
-                        }}
-                      >
-                        Menunggu customer
-                      </button>
-                    )}
-                  </div>
-                );
-              })
+              updateRows.map((u) => (
+                <DataCard key={u.id}>
+                  <p style={{ margin: "0 0 6px 0", fontWeight: 700 }}>{u.namaLengkap}</p>
+                  <p style={{ margin: "4px 0" }}>{u.email}</p>
+                  <p style={{ margin: "4px 0" }}>Update ke: {u.upgradePackage}</p>
+                  <ActionButton color="#2563eb" onClick={() => approveUpgrade(u)}>
+                    Approve Update
+                  </ActionButton>
+                </DataCard>
+              ))
             )}
-          </div>
+          </SectionCard>
 
-          <div
-            style={{
-              background: "white",
-              borderRadius: 18,
-              padding: 16,
-              marginBottom: 18,
-              boxShadow: "0 12px 30px rgba(15,23,42,0.08)",
-            }}
-          >
-            <h2 style={{ marginTop: 0 }}>💰 Tabel Komisi</h2>
-
-            {komisiRecords.length === 0 ? (
+          <SectionCard title="💰 Tabel Komisi">
+            {komisiRows.length === 0 ? (
               <p>Belum ada komisi.</p>
             ) : (
-              komisiRecords.map((k) => (
-                <div
-                  key={k.id}
-                  style={{
-                    border: "1px solid #e2e8f0",
-                    borderRadius: 14,
-                    padding: 14,
-                    marginBottom: 12,
-                  }}
-                >
-                  <p style={{ margin: "0 0 6px 0", fontWeight: 700 }}>
-                    {safeValue(k.nama)}
-                  </p>
-                  <p style={{ margin: "4px 0" }}>Dari: {safeValue(k.dari)}</p>
-                  <p style={{ margin: "4px 0" }}>
-                    Paket: {safeValue(k.paketBeli)}
-                  </p>
-                  <p style={{ margin: "4px 0" }}>
-                    Sumber: {safeValue(k.sumber)}
-                  </p>
-                  <p style={{ margin: "4px 0" }}>
-                    Komisi: {formatRupiah(k.jumlah)}
-                  </p>
-                </div>
+              komisiRows.map((row) => (
+                <DataCard key={row.id}>
+                  <p style={{ margin: "0 0 6px 0", fontWeight: 700 }}>{row.nama}</p>
+                  <p style={{ margin: "4px 0" }}>Dari: {row.dari}</p>
+                  <p style={{ margin: "4px 0" }}>Paket: {row.paketBeli}</p>
+                  <p style={{ margin: "4px 0" }}>Sumber: {row.sumber}</p>
+                  <p style={{ margin: "4px 0" }}>Komisi: {formatRp(row.jumlah)}</p>
+                </DataCard>
               ))
             )}
-          </div>
+          </SectionCard>
 
-          <div
-            style={{
-              background: "white",
-              borderRadius: 18,
-              padding: 16,
-              marginBottom: 18,
-              boxShadow: "0 12px 30px rgba(15,23,42,0.08)",
-            }}
-          >
-            <h2 style={{ marginTop: 0 }}>👥 Bonus Referral</h2>
-
-            {bonusReadyRows.length === 0 ? (
+          <SectionCard title="👥 Bonus Referral">
+            {bonusRows.length === 0 ? (
               <p>Tidak ada bonus yang siap dibayar.</p>
             ) : (
-              bonusReadyRows.map((u) => (
-                <div
-                  key={u.id}
-                  style={{
-                    border: "1px solid #e2e8f0",
-                    borderRadius: 14,
-                    padding: 14,
-                    marginBottom: 12,
-                  }}
-                >
-                  <p style={{ margin: "0 0 6px 0", fontWeight: 700 }}>
-                    {safeValue(u.namaLengkap)}
-                  </p>
-                  <p style={{ margin: "4px 0" }}>Email: {safeValue(u.email)}</p>
+              bonusRows.map((u) => (
+                <DataCard key={u.id}>
+                  <p style={{ margin: "0 0 6px 0", fontWeight: 700 }}>{u.namaLengkap}</p>
+                  <p style={{ margin: "4px 0" }}>Email: {u.email}</p>
+                  <p style={{ margin: "4px 0" }}>Total Referral: {u.jumlahRekrut || 0}</p>
                   <p style={{ margin: "4px 0" }}>
-                    Total Referral: {u.jumlahRekrut || 0}
+                    Bonus Siap Dibayar: {formatRp((u.bonusQueue || 0) * 100000)}
                   </p>
-                  <p style={{ margin: "4px 0" }}>
-                    Bonus Siap Dibayar:{" "}
-                    {formatRupiah((u.bonusQueue || 0) * 100000)}
-                  </p>
-
-                  <button
-                    onClick={() => approveBonus(u)}
-                    style={{
-                      background: "#d97706",
-                      color: "white",
-                      border: "none",
-                      borderRadius: 10,
-                      padding: "10px 14px",
-                      fontWeight: 700,
-                      cursor: "pointer",
-                    }}
-                  >
+                  <ActionButton color="#d97706" onClick={() => approveBonus(u)}>
                     Approve Bonus 100k
-                  </button>
-                </div>
+                  </ActionButton>
+                </DataCard>
               ))
             )}
-          </div>
+          </SectionCard>
 
-          <div
-            style={{
-              background: "white",
-              borderRadius: 18,
-              padding: 16,
-              marginBottom: 18,
-              boxShadow: "0 12px 30px rgba(15,23,42,0.08)",
-            }}
-          >
-            <h2 style={{ marginTop: 0 }}>💸 Penarikan</h2>
-
-            {withdrawNotifications.length === 0 ? (
+          <SectionCard title="💸 Penarikan">
+            {withdrawRows.length === 0 ? (
               <p>Tidak ada penarikan pending.</p>
             ) : (
-              withdrawNotifications.map((u) => (
-                <div
-                  key={u.id}
-                  style={{
-                    border: "1px solid #e2e8f0",
-                    borderRadius: 14,
-                    padding: 14,
-                    marginBottom: 12,
-                  }}
-                >
-                  <p style={{ margin: "0 0 6px 0", fontWeight: 700 }}>
-                    {safeValue(u.namaLengkap)}
-                  </p>
-                  <p style={{ margin: "4px 0" }}>Email: {safeValue(u.email)}</p>
+              withdrawRows.map((u) => (
+                <DataCard key={u.id}>
+                  <p style={{ margin: "0 0 6px 0", fontWeight: 700 }}>{u.namaLengkap}</p>
+                  <p style={{ margin: "4px 0" }}>Email: {u.email}</p>
                   <p style={{ margin: "4px 0" }}>
-                    Jumlah: {formatRupiah(u.withdrawRequest?.amount || 0)}
+                    Jumlah: {formatRp(u.withdrawRequest?.amount || 0)}
                   </p>
-
-                  <button
-                    onClick={() => approveWithdraw(u)}
-                    style={{
-                      background: "#16a34a",
-                      color: "white",
-                      border: "none",
-                      borderRadius: 10,
-                      padding: "10px 14px",
-                      fontWeight: 700,
-                      cursor: "pointer",
-                    }}
-                  >
+                  <ActionButton color="#16a34a" onClick={() => approveWithdraw(u)}>
                     Approve Penarikan
-                  </button>
-                </div>
+                  </ActionButton>
+                </DataCard>
               ))
             )}
-          </div>
+          </SectionCard>
 
-          <div
-            style={{
-              background: "white",
-              borderRadius: 18,
-              padding: 16,
-              marginBottom: 18,
-              boxShadow: "0 12px 30px rgba(15,23,42,0.08)",
-            }}
-          >
-            <h2 style={{ marginTop: 0 }}>👤 Semua User</h2>
-
+          <SectionCard title="👤 Semua User">
             <div
               style={{
                 display: "flex",
@@ -1852,100 +1309,34 @@ Mohon di cek dan approve ya kak`;
               <p>Belum ada data user.</p>
             ) : (
               filteredCustomers.map((u) => (
-                <div
-                  key={u.id}
-                  style={{
-                    border: "1px solid #e2e8f0",
-                    borderRadius: 16,
-                    padding: 14,
-                    marginBottom: 14,
-                  }}
-                >
-                  <p style={{ margin: "0 0 6px 0", fontWeight: 700 }}>
-                    {safeValue(u.namaLengkap)}
-                  </p>
-                  <p style={{ margin: "4px 0" }}>Email: {safeValue(u.email)}</p>
-                  <p style={{ margin: "4px 0" }}>No HP: {safeValue(u.noHp)}</p>
-                  <p style={{ margin: "4px 0" }}>Paket: {safeValue(u.paket)}</p>
-                  <p style={{ margin: "4px 0" }}>
-                    Status: {safeValue(u.status)}
-                  </p>
-                  <p style={{ margin: "4px 0" }}>
-                    Referral Code: {safeValue(u.referralCode)}
-                  </p>
-                  <p style={{ margin: "4px 0" }}>
-                    Referred By: {safeValue(u.referredBy)}
-                  </p>
-                  <p style={{ margin: "4px 0" }}>
-                    Jumlah Rekrut: {u.jumlahRekrut || 0}
-                  </p>
-                  <p style={{ margin: "4px 0" }}>
-                    Komisi Saldo: {formatRupiah(u.komisiSaldo || 0)}
-                  </p>
-                  <p style={{ margin: "4px 0" }}>
-                    Bonus Progress: {u.bonusProgress || 0}/10
-                  </p>
-                  <p style={{ margin: "4px 0" }}>
-                    Bonus Queue: {u.bonusQueue || 0}
-                  </p>
+                <DataCard key={u.id}>
+                  <p style={{ margin: "0 0 6px 0", fontWeight: 700 }}>{u.namaLengkap}</p>
+                  <p style={{ margin: "4px 0" }}>Email: {u.email}</p>
+                  <p style={{ margin: "4px 0" }}>No HP: {u.noHp}</p>
+                  <p style={{ margin: "4px 0" }}>Paket: {u.paket}</p>
+                  <p style={{ margin: "4px 0" }}>Status: {u.status}</p>
+                  <p style={{ margin: "4px 0" }}>Referral Code: {u.referralCode}</p>
+                  <p style={{ margin: "4px 0" }}>Referred By: {safe(u.referredBy)}</p>
+                  <p style={{ margin: "4px 0" }}>Jumlah Rekrut: {u.jumlahRekrut || 0}</p>
+                  <p style={{ margin: "4px 0" }}>Komisi Saldo: {formatRp(u.komisiSaldo || 0)}</p>
+                  <p style={{ margin: "4px 0" }}>Progress Bonus: {u.bonusProgress || 0}/10</p>
+                  <p style={{ margin: "4px 0" }}>Bonus Queue: {u.bonusQueue || 0}</p>
 
-                  <div
-                    style={{
-                      display: "flex",
-                      gap: 8,
-                      flexWrap: "wrap",
-                      marginTop: 10,
-                    }}
-                  >
-                    <button
-                      onClick={() => copyText(u.email, "Email disalin")}
-                      style={{
-                        background: "#2563eb",
-                        color: "white",
-                        border: "none",
-                        borderRadius: 10,
-                        padding: "10px 12px",
-                        fontWeight: 700,
-                        cursor: "pointer",
-                      }}
-                    >
+                  <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 10 }}>
+                    <ActionButton color="#2563eb" onClick={() => copyText(u.email, "Email disalin")}>
                       Copy Email
-                    </button>
-
-                    <button
-                      onClick={() => copyText(u.noHp || "", "No HP disalin")}
-                      style={{
-                        background: "#475569",
-                        color: "white",
-                        border: "none",
-                        borderRadius: 10,
-                        padding: "10px 12px",
-                        fontWeight: 700,
-                        cursor: "pointer",
-                      }}
-                    >
+                    </ActionButton>
+                    <ActionButton color="#475569" onClick={() => copyText(u.noHp || "", "No HP disalin")}>
                       Copy No HP
-                    </button>
-
-                    <button
-                      onClick={() => deleteUser(u.id)}
-                      style={{
-                        background: "#dc2626",
-                        color: "white",
-                        border: "none",
-                        borderRadius: 10,
-                        padding: "10px 12px",
-                        fontWeight: 700,
-                        cursor: "pointer",
-                      }}
-                    >
+                    </ActionButton>
+                    <ActionButton color="#dc2626" onClick={() => deleteUser(u.id)}>
                       Hapus
-                    </button>
+                    </ActionButton>
                   </div>
-                </div>
+                </DataCard>
               ))
             )}
-          </div>
+          </SectionCard>
         </div>
       </div>
     );
@@ -1954,51 +1345,40 @@ Mohon di cek dan approve ya kak`;
   // ================= CUSTOMER DASHBOARD =================
   if (page === "dashboard" && userData) {
     const userApproved = userData.status === "approved";
-    const canShowBayarDaftar = !userApproved && !userData.sudahBayar;
-
+    const canShowBayarDaftar = !userApproved;
     const hasPendingUpgrade =
       userData.upgradeRequested && userData.upgradeStatus === "pending";
-
-    const canShowBayarUpdate = hasPendingUpgrade && !userData.upgradePaid;
-    const canShowKonfirmasiUpdate =
-      hasPendingUpgrade && userData.upgradePaid && !userData.upgradeRequestSent;
 
     const referralLink = `${WEBSITE_URL}/?ref=${userData.referralCode}`;
 
     return (
       <div style={{ ...container, paddingTop: 0 }}>
-        <div style={{ width: "100%", maxWidth: 1150 }}>
+        <div style={{ width: "100%", maxWidth: 900, margin: "0 auto" }}>
           <div
             style={{
               position: "sticky",
               top: 0,
               zIndex: 10,
-              background: "#0f172a",
-              padding: "12px 16px",
+              background: "#020617",
+              padding: "12px 0",
               borderBottom: "1px solid rgba(255,255,255,0.05)",
               marginBottom: 14,
             }}
           >
-            <h3 style={{ margin: 0, fontSize: 16 }}>
-              👋 {safeValue(userData.namaLengkap)}
-            </h3>
+            <h3 style={{ margin: 0, fontSize: 16 }}>👋 {userData.namaLengkap}</h3>
           </div>
 
           <div
             style={{
-              background: "linear-gradient(135deg,#22c55e,#16a34a)",
+              background: "linear-gradient(90deg,#22c55e,#16a34a)",
               padding: 16,
               borderRadius: 16,
               marginBottom: 14,
               color: "white",
             }}
           >
-            <p style={{ margin: 0, fontSize: 12, opacity: 0.9 }}>
-              Total Saldo Komisi
-            </p>
-            <h2 style={{ margin: "4px 0 0 0" }}>
-              {formatRupiah(totalSaldoUser)}
-            </h2>
+            <p style={{ margin: 0, fontSize: 12, opacity: 0.9 }}>Total Saldo Komisi</p>
+            <h2 style={{ margin: "4px 0 0 0" }}>{formatRp(totalKomisiUser)}</h2>
           </div>
 
           <div
@@ -2018,317 +1398,177 @@ Mohon di cek dan approve ya kak`;
               </p>
             </div>
 
-            <button
-              style={{ ...btnSecondary, width: 160, marginTop: 0 }}
-              onClick={handleLogout}
-              {...pressProps}
-            >
+            <button style={{ ...btnDark, width: 140, marginTop: 0 }} onClick={handleLogout}>
               Logout
             </button>
           </div>
 
-          <div
-            style={{
-              width: "100%",
-              maxWidth: 1150,
-              margin: "0 auto",
-              display: "grid",
-              gridTemplateColumns: "1fr",
-              gap: 14,
-            }}
-          >
-            <div style={panel}>
-              <h3 style={sectionTitle}>Profil Customer</h3>
-
-              <div style={paymentBox}>
-                <p style={{ margin: "6px 0" }}>
-                  <strong>Nama:</strong> {userData.namaLengkap}
-                </p>
-                <p style={{ margin: "6px 0" }}>
-                  <strong>Email:</strong> {userData.email}
-                </p>
-                <p style={{ margin: "6px 0" }}>
-                  <strong>No HP:</strong> {userData.noHp}
-                </p>
-                <p style={{ margin: "6px 0" }}>
-                  <strong>Bank/nomor rekening:</strong>{" "}
-                  {userData.bankNomorRekening}
-                </p>
-                <p style={{ margin: "6px 0" }}>
-                  <strong>Paket:</strong> {userData.paket}
-                </p>
-                <p style={{ margin: "6px 0" }}>
-                  <strong>Status:</strong> {userData.status}
-                </p>
-              </div>
+          <div style={panel}>
+            <h3 style={sectionTitle}>Profil Customer</h3>
+            <div style={appBox}>
+              <p style={{ margin: "6px 0" }}><strong>Nama:</strong> {userData.namaLengkap}</p>
+              <p style={{ margin: "6px 0" }}><strong>Email:</strong> {userData.email}</p>
+              <p style={{ margin: "6px 0" }}><strong>No HP:</strong> {userData.noHp}</p>
+              <p style={{ margin: "6px 0" }}>
+                <strong>Bank/nomor rekening:</strong> {userData.bankNomorRekening}
+              </p>
+              <p style={{ margin: "6px 0" }}><strong>Paket:</strong> {userData.paket}</p>
+              <p style={{ margin: "6px 0" }}><strong>Status:</strong> {userData.status}</p>
             </div>
+          </div>
 
-            <div style={panel}>
-              <h3 style={sectionTitle}>Referral Saya</h3>
+          <div style={panel}>
+            <h3 style={sectionTitle}>Referral Saya</h3>
+            <div style={appBox}>
+              <p style={{ margin: "6px 0" }}><strong>Kode Referral:</strong> {userData.referralCode}</p>
+              <p style={{ margin: "6px 0" }}><strong>Total Referral:</strong> {userData.jumlahRekrut || 0}</p>
+              <p style={{ margin: "6px 0" }}>
+                <strong>Progress Bonus:</strong> {userData.bonusProgress || 0}/10
+              </p>
+              <p style={{ margin: "6px 0" }}>
+                <strong>Bonus Siap Dibayar:</strong> {formatRp(totalBonusReady)}
+              </p>
+              <p style={{ margin: "6px 0", wordBreak: "break-all" }}>
+                <strong>Link Referral:</strong>
+                <br />
+                {referralLink}
+              </p>
 
-              <div style={paymentBox}>
-                <p style={{ margin: "6px 0" }}>
-                  <strong>Kode Referral:</strong> {userData.referralCode}
-                </p>
-                <p style={{ margin: "6px 0" }}>
-                  <strong>Total Referral:</strong> {userData.jumlahRekrut || 0}
-                </p>
-                <p style={{ margin: "6px 0" }}>
-                  <strong>Progress Bonus:</strong> {userData.bonusProgress || 0}
-                  /10
-                </p>
-                <p style={{ margin: "6px 0" }}>
-                  <strong>Bonus Siap Dibayar:</strong>{" "}
-                  {formatRupiah(totalBonusReady)}
-                </p>
-                <p style={{ margin: "6px 0", wordBreak: "break-all" }}>
-                  <strong>Link Referral:</strong>
-                  <br />
-                  {referralLink}
-                </p>
-
-                <button
-                  style={btnBlue}
-                  onClick={() =>
-                    copyText(referralLink, "Link referral disalin.")
-                  }
-                  {...pressProps}
-                >
-                  Copy Link
-                </button>
-
-                <button
-                  style={btnSecondary}
-                  onClick={() => window.open(WA_LINK, "_blank")}
-                  {...pressProps}
-                >
-                  Hubungi Admin
-                </button>
-              </div>
-            </div>
-
-            <div style={panel}>
-              <h3 style={sectionTitle}>Keuangan</h3>
-
-              <div style={paymentBox}>
-                <p style={{ margin: "6px 0" }}>
-                  <strong>Komisi Paket (Bisa Ditarik):</strong>{" "}
-                  {formatRupiah(userData.komisiSaldo || 0)}
-                </p>
-                <p style={{ margin: "6px 0" }}>
-                  <strong>Bonus Referral:</strong>{" "}
-                  {formatRupiah((userData.bonusQueue || 0) * 100000)}
-                </p>
-                <p style={{ margin: "6px 0" }}>
-                  <strong>Total Sudah Ditarik:</strong>{" "}
-                  {formatRupiah(userData.totalWithdrawn || 0)}
-                </p>
-              </div>
-
-              <input
-                style={input}
-                placeholder="Jumlah yang akan ditarik"
-                value={withdrawAmount}
-                onChange={(e) => setWithdrawAmount(e.target.value)}
-              />
-
-              <button style={btnGold} onClick={submitWithdraw} {...pressProps}>
-                Tarik Saldo
+              <button style={btnBlue} onClick={() => copyText(referralLink, "Link referral disalin.")}>
+                Copy Link
               </button>
 
-              {userData.withdrawRequest?.status === "pending" && (
+              <button style={btnDark} onClick={() => window.open(WA_ADMIN, "_blank")}>
+                Hubungi Admin
+              </button>
+            </div>
+          </div>
+
+          <div style={panel}>
+            <h3 style={sectionTitle}>Keuangan</h3>
+            <div style={appBox}>
+              <p style={{ margin: "6px 0" }}>
+                <strong>Komisi Paket (Bisa Ditarik):</strong> {formatRp(userData.komisiSaldo || 0)}
+              </p>
+              <p style={{ margin: "6px 0" }}>
+                <strong>Bonus Referral:</strong> {formatRp(totalBonusReady)}
+              </p>
+              <p style={{ margin: "6px 0" }}>
+                <strong>Total Sudah Ditarik:</strong> {formatRp(userData.totalWithdrawn || 0)}
+              </p>
+            </div>
+
+            <input
+              style={input}
+              placeholder="Jumlah yang akan ditarik"
+              value={withdrawAmount}
+              onChange={(e) => setWithdrawAmount(e.target.value)}
+            />
+
+            <button style={btnGold} onClick={submitWithdraw}>
+              Tarik Saldo
+            </button>
+
+            {userData.withdrawRequest?.status === "pending" && (
+              <p style={{ marginTop: 12, color: "#facc15", fontWeight: 700 }}>
+                Permintaan penarikan {formatRp(userData.withdrawRequest.amount)} sedang menunggu admin.
+              </p>
+            )}
+          </div>
+
+          <div style={panel}>
+            <h3 style={sectionTitle}>Pembayaran Pendaftaran</h3>
+            <div style={appBox}>
+              <p style={{ margin: "0 0 8px 0", fontWeight: 700 }}>Metode Pembayaran</p>
+              <p style={{ margin: "4px 0" }}>OVO 085889827352</p>
+              <p style={{ margin: "4px 0" }}>SEABANK 901503319741</p>
+              <p style={{ margin: "4px 0" }}>BANK JAGO 105830435142</p>
+              <p style={{ margin: "4px 0" }}>NEOBANK 5859459237817910</p>
+              <p style={{ margin: "4px 0" }}>A/n ( MAMDUHAM )</p>
+              <hr style={{ borderColor: "#1e293b", margin: "12px 0" }} />
+              <p style={{ margin: "6px 0" }}><strong>Paket:</strong> {userData.paket}</p>
+              <p style={{ margin: "6px 0" }}><strong>Harga:</strong> {getHargaPaketLabel(userData.paket)}</p>
+
+              {userApproved && (
+                <p style={{ color: "#4ade80", fontWeight: 700 }}>
+                  Pembayaran pendaftaran sudah dikonfirmasi admin.
+                </p>
+              )}
+
+              {canShowBayarDaftar && (
+                <button style={btnGold} onClick={handleSudahBayarDaftar}>
+                  SUDAH TRANSFER KONFIRMASI DI SINI
+                </button>
+              )}
+
+              {!userApproved && userData.paymentRequestSent && (
                 <p style={{ marginTop: 12, color: "#facc15", fontWeight: 700 }}>
-                  Permintaan penarikan{" "}
-                  {formatRupiah(userData.withdrawRequest.amount)} sedang
-                  menunggu admin.
+                  Menunggu konfirmasi admin.
                 </p>
               )}
             </div>
+          </div>
 
-            <div style={panel}>
-              <h3 style={sectionTitle}>Pembayaran Pendaftaran</h3>
+          <div style={panel}>
+            <h3 style={sectionTitle}>Upgrade Paket</h3>
 
-              <div style={paymentBox}>
-                <p style={{ margin: "0 0 8px 0", fontWeight: 700 }}>
-                  Metode Pembayaran
+            {!userApproved ? (
+              <div style={appBox}>
+                <p style={{ margin: 0 }}>
+                  Akun harus di approve dulu oleh admin.
                 </p>
-                <p style={{ margin: "4px 0" }}>OVO 085889827352</p>
-                <p style={{ margin: "4px 0" }}>SEABANK 901503319741</p>
-                <p style={{ margin: "4px 0" }}>BANK JAGO 105830435142</p>
-                <p style={{ margin: "4px 0" }}>NEOBANK 5859459237817910</p>
-                <p style={{ margin: "4px 0" }}>A/n ( MAMDUHAM )</p>
-                <hr style={{ borderColor: "#1e293b", margin: "12px 0" }} />
-                <p style={{ margin: "6px 0" }}>
-                  Paket: <strong>{userData.paket}</strong>
-                </p>
-                <p style={{ margin: "6px 0" }}>
-                  Harga: <strong>{getPackagePriceLabel(userData.paket)}</strong>
-                </p>
+              </div>
+            ) : (
+              <div style={appBox}>
+                {!hasPendingUpgrade ? (
+                  <>
+                    {!showUpgradeOptions ? (
+                      <button style={btnPink} onClick={() => setShowUpgradeOptions(true)}>
+                        Update
+                      </button>
+                    ) : (
+                      <>
+                        <button style={btnBlue} onClick={() => chooseUpgradePackage("Premium")}>
+                          Paket Premium 250.000
+                        </button>
 
-                {userApproved && (
-                  <p style={{ color: "#4ade80", fontWeight: 700 }}>
-                    Pembayaran pendaftaran sudah dikonfirmasi admin.
-                  </p>
-                )}
+                        <button style={btnGold} onClick={() => chooseUpgradePackage("Gold")}>
+                          Paket Gold 500.000
+                        </button>
 
-                {canShowBayarDaftar && (
-                  <button
-                    style={btnGold}
-                    onClick={handleSudahBayarDaftar}
-                    {...pressProps}
-                  >
-                    SUDAH TRANSFER KONFIRMASI DI SINI
-                  </button>
-                )}
-
-                {!userApproved && userData.paymentRequestSent && (
-                  <p
-                    style={{ marginTop: 12, color: "#facc15", fontWeight: 700 }}
-                  >
-                    Menunggu konfirmasi admin.
-                  </p>
+                        <button style={btnDark} onClick={() => setShowUpgradeOptions(false)}>
+                          Batal
+                        </button>
+                      </>
+                    )}
+                  </>
+                ) : (
+                  <>
+                    <p style={{ margin: "6px 0" }}>
+                      <strong>Request upgrade kamu sedang diproses admin.</strong>
+                    </p>
+                    <p style={{ margin: "6px 0" }}>
+                      Paket dipilih: <strong>{userData.upgradePackage}</strong>
+                    </p>
+                  </>
                 )}
               </div>
-            </div>
+            )}
+          </div>
 
-            <div style={panel}>
-              <h3 style={sectionTitle}>Update Paket</h3>
+          <div style={panel}>
+            <h3 style={sectionTitle}>Riwayat</h3>
 
-              {!userApproved ? (
-                <div style={paymentBox}>
-                  <p style={{ opacity: 0.9 }}>
-                    Tombol update paket muncul setelah akun kamu dikonfirmasi
-                    admin.
-                  </p>
-                </div>
-              ) : (
-                <>
-                  {!hasPendingUpgrade && (
-                    <div style={paymentBox}>
-                      <p style={{ marginTop: 0 }}>
-                        Pilih update paket yang kamu inginkan.
-                      </p>
+            <button style={btnDark} onClick={() => setShowHistory(!showHistory)}>
+              {showHistory ? "Tutup Riwayat" : "Buka Riwayat"}
+            </button>
 
-                      {!showUpgradeOptions ? (
-                        <button
-                          style={btnPink}
-                          onClick={() => setShowUpgradeOptions(true)}
-                          {...pressProps}
-                        >
-                          Update
-                        </button>
-                      ) : (
-                        <>
-                          <button
-                            style={btnBlue}
-                            onClick={() => chooseUpgradePackage("Premium")}
-                            {...pressProps}
-                          >
-                            Paket Premium 250k
-                          </button>
+            {showHistory && (
+              <div style={{ marginTop: 12 }}>
+                <div style={{ ...appBox, marginBottom: 12 }}>
+                  <p style={{ margin: "0 0 8px 0", fontWeight: 700 }}>Riwayat Penarikan</p>
 
-                          <button
-                            style={btnGold}
-                            onClick={() => chooseUpgradePackage("Gold")}
-                            {...pressProps}
-                          >
-                            Paket Gold 500k
-                          </button>
-
-                          <button
-                            style={btnSecondary}
-                            onClick={() => setShowUpgradeOptions(false)}
-                            {...pressProps}
-                          >
-                            Batal
-                          </button>
-                        </>
-                      )}
-                    </div>
-                  )}
-
-                  {hasPendingUpgrade && (
-                    <div style={paymentBox}>
-                      <p style={{ margin: "0 0 8px 0", fontWeight: 700 }}>
-                        Metode Pembayaran
-                      </p>
-                      <p style={{ margin: "4px 0" }}>OVO 085889827352</p>
-                      <p style={{ margin: "4px 0" }}>SEABANK 901503319741</p>
-                      <p style={{ margin: "4px 0" }}>BANK JAGO 105830435142</p>
-                      <p style={{ margin: "4px 0" }}>
-                        NEOBANK 5859459237817910
-                      </p>
-                      <p style={{ margin: "4px 0" }}>A/n ( MAMDUHAM )</p>
-                      <hr
-                        style={{ borderColor: "#1e293b", margin: "12px 0" }}
-                      />
-                      <p style={{ margin: "6px 0" }}>
-                        Paket Saat Ini: <strong>{userData.paket}</strong>
-                      </p>
-                      <p style={{ margin: "6px 0" }}>
-                        Paket Update: <strong>{userData.upgradePackage}</strong>
-                      </p>
-                      <p style={{ margin: "6px 0" }}>
-                        Harga Update:{" "}
-                        <strong>
-                          {getPackagePriceLabel(userData.upgradePackage)}
-                        </strong>
-                      </p>
-
-                      {canShowBayarUpdate && (
-                        <button
-                          style={btnGold}
-                          onClick={handleSudahBayarUpdate}
-                          {...pressProps}
-                        >
-                          Saya sudah membayar
-                        </button>
-                      )}
-
-                      {canShowKonfirmasiUpdate && (
-                        <button
-                          style={btn}
-                          onClick={handleKonfirmasiUpdate}
-                          {...pressProps}
-                        >
-                          Konfirmasi Pembayaran
-                        </button>
-                      )}
-
-                      {userData.upgradeRequestSent && (
-                        <p
-                          style={{
-                            marginTop: 12,
-                            color: "#facc15",
-                            fontWeight: 700,
-                          }}
-                        >
-                          Update paket sedang menunggu konfirmasi admin.
-                        </p>
-                      )}
-                    </div>
-                  )}
-                </>
-              )}
-            </div>
-
-            <div style={panel}>
-              <h3 style={sectionTitle}>Riwayat</h3>
-
-              <button
-                style={btnSecondary}
-                onClick={() => setShowWithdrawHistory(!showWithdrawHistory)}
-                {...pressProps}
-              >
-                {showWithdrawHistory
-                  ? "Tutup Riwayat Penarikan"
-                  : "Riwayat Penarikan"}
-              </button>
-
-              {showWithdrawHistory && (
-                <div style={{ ...paymentBox, marginTop: 10 }}>
-                  {!userData.withdrawalHistory ||
-                  userData.withdrawalHistory.length === 0 ? (
+                  {!userData.withdrawalHistory || userData.withdrawalHistory.length === 0 ? (
                     <p style={{ margin: 0 }}>Belum ada riwayat penarikan.</p>
                   ) : (
                     [...userData.withdrawalHistory]
@@ -2336,13 +1576,10 @@ Mohon di cek dan approve ya kak`;
                       .map((item) => (
                         <div
                           key={item.id}
-                          style={{
-                            padding: "10px 0",
-                            borderBottom: "1px solid #1e293b",
-                          }}
+                          style={{ padding: "10px 0", borderBottom: "1px solid #1e293b" }}
                         >
                           <p style={{ margin: "4px 0" }}>
-                            <strong>Jumlah:</strong> {formatRupiah(item.amount)}
+                            <strong>Jumlah:</strong> {formatRp(item.amount)}
                           </p>
                           <p style={{ margin: "4px 0" }}>
                             <strong>Status:</strong> {item.status}
@@ -2351,20 +1588,11 @@ Mohon di cek dan approve ya kak`;
                       ))
                   )}
                 </div>
-              )}
 
-              <button
-                style={btnSecondary}
-                onClick={() => setShowBonusHistory(!showBonusHistory)}
-                {...pressProps}
-              >
-                {showBonusHistory ? "Tutup History Bonus" : "History Bonus"}
-              </button>
+                <div style={appBox}>
+                  <p style={{ margin: "0 0 8px 0", fontWeight: 700 }}>History Bonus</p>
 
-              {showBonusHistory && (
-                <div style={{ ...paymentBox, marginTop: 10 }}>
-                  {!userData.bonusHistory ||
-                  userData.bonusHistory.length === 0 ? (
+                  {!userData.bonusHistory || userData.bonusHistory.length === 0 ? (
                     <p style={{ margin: 0 }}>Belum ada history bonus.</p>
                   ) : (
                     [...userData.bonusHistory]
@@ -2372,13 +1600,10 @@ Mohon di cek dan approve ya kak`;
                       .map((item) => (
                         <div
                           key={item.id}
-                          style={{
-                            padding: "10px 0",
-                            borderBottom: "1px solid #1e293b",
-                          }}
+                          style={{ padding: "10px 0", borderBottom: "1px solid #1e293b" }}
                         >
                           <p style={{ margin: "4px 0" }}>
-                            <strong>Jumlah:</strong> {formatRupiah(item.amount)}
+                            <strong>Jumlah:</strong> {formatRp(item.amount)}
                           </p>
                           <p style={{ margin: "4px 0" }}>
                             <strong>Status:</strong> {item.status}
@@ -2387,45 +1612,34 @@ Mohon di cek dan approve ya kak`;
                       ))
                   )}
                 </div>
-              )}
-            </div>
+              </div>
+            )}
+          </div>
 
-            <div style={panel}>
-              <h3 style={sectionTitle}>Notifikasi Customer</h3>
-
-              {!userData.notifCustomer ||
-              userData.notifCustomer.length === 0 ? (
-                <div style={paymentBox}>
-                  <p style={{ margin: 0 }}>Belum ada notifikasi.</p>
-                </div>
+          <div style={panel}>
+            <h3 style={sectionTitle}>Notifikasi Customer</h3>
+            <div style={appBox}>
+              {!userData.notifCustomer || userData.notifCustomer.length === 0 ? (
+                <p style={{ margin: 0 }}>Belum ada notifikasi.</p>
               ) : (
-                <div style={paymentBox}>
-                  {[...userData.notifCustomer]
-                    .sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0))
-                    .slice(0, 10)
-                    .map((n) => (
-                      <div
-                        key={n.id}
-                        style={{
-                          padding: "10px 0",
-                          borderBottom: "1px solid #1e293b",
-                        }}
-                      >
-                        <p style={{ margin: "4px 0", fontWeight: 700 }}>
-                          {n.title}
-                        </p>
-                        <p style={{ margin: "4px 0", opacity: 0.9 }}>
-                          {n.message}
-                        </p>
-                      </div>
-                    ))}
-                </div>
+                [...userData.notifCustomer]
+                  .sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0))
+                  .slice(0, 10)
+                  .map((n) => (
+                    <div
+                      key={n.id}
+                      style={{ padding: "10px 0", borderBottom: "1px solid #1e293b" }}
+                    >
+                      <p style={{ margin: "4px 0", fontWeight: 700 }}>{n.title}</p>
+                      <p style={{ margin: "4px 0" }}>{n.message}</p>
+                    </div>
+                  ))
               )}
             </div>
           </div>
 
           <a
-            href={WA_LINK}
+            href={WA_ADMIN}
             target="_blank"
             rel="noreferrer"
             style={{
@@ -2434,11 +1648,15 @@ Mohon di cek dan approve ya kak`;
               right: 20,
               background: "#22c55e",
               color: "white",
-              padding: 14,
+              width: 54,
+              height: 54,
               borderRadius: "50%",
-              fontSize: 18,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
               textDecoration: "none",
               boxShadow: "0 5px 20px rgba(0,0,0,0.4)",
+              fontSize: 22,
             }}
           >
             💬
@@ -2448,12 +1666,11 @@ Mohon di cek dan approve ya kak`;
     );
   }
 
-  // ================= FALLBACK =================
   return (
     <div
       style={{
         minHeight: "100vh",
-        background: "#0f172a",
+        background: "#020617",
         color: "white",
         display: "flex",
         justifyContent: "center",
@@ -2462,5 +1679,73 @@ Mohon di cek dan approve ya kak`;
     >
       Loading...
     </div>
+  );
+}
+
+// ================= SMALL COMPONENTS =================
+function StatCard({ title, value }) {
+  return (
+    <div
+      style={{
+        background: "white",
+        borderRadius: 18,
+        padding: 16,
+        boxShadow: "0 12px 30px rgba(15,23,42,0.08)",
+      }}
+    >
+      <h3 style={{ marginTop: 0 }}>{title}</h3>
+      <p style={{ margin: 0, fontSize: 28, fontWeight: 800 }}>{value}</p>
+    </div>
+  );
+}
+
+function SectionCard({ title, children }) {
+  return (
+    <div
+      style={{
+        background: "white",
+        borderRadius: 18,
+        padding: 16,
+        marginBottom: 18,
+        boxShadow: "0 12px 30px rgba(15,23,42,0.08)",
+      }}
+    >
+      <h2 style={{ marginTop: 0 }}>{title}</h2>
+      {children}
+    </div>
+  );
+}
+
+function DataCard({ children }) {
+  return (
+    <div
+      style={{
+        border: "1px solid #e2e8f0",
+        borderRadius: 14,
+        padding: 14,
+        marginBottom: 12,
+      }}
+    >
+      {children}
+    </div>
+  );
+}
+
+function ActionButton({ children, onClick, color, textColor }) {
+  return (
+    <button
+      onClick={onClick}
+      style={{
+        background: color || "#475569",
+        color: textColor || "white",
+        border: "none",
+        borderRadius: 10,
+        padding: "10px 14px",
+        fontWeight: 700,
+        cursor: onClick ? "pointer" : "not-allowed",
+      }}
+    >
+      {children}
+    </button>
   );
 }
