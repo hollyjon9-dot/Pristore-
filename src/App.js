@@ -5,6 +5,10 @@ import {
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
   signOut,
+  sendPasswordResetEmail,
+  setPersistence,
+  browserLocalPersistence,
+  onAuthStateChanged,
 } from "firebase/auth";
 import {
   getFirestore,
@@ -104,6 +108,7 @@ export default function App() {
   const [loading, setLoading] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
   const [userData, setUserData] = useState(null);
+  const [authChecked, setAuthChecked] = useState(false);
 
   // ================= FORM =================
   const [namaLengkap, setNamaLengkap] = useState("");
@@ -118,6 +123,7 @@ export default function App() {
   const [withdrawAmount, setWithdrawAmount] = useState("");
   const [showHistory, setShowHistory] = useState(false);
   const [showUpgradeOptions, setShowUpgradeOptions] = useState(false);
+  const [resetInfo, setResetInfo] = useState("");
 
   // ================= ADMIN STATE =================
   const [usersAdmin, setUsersAdmin] = useState([]);
@@ -136,6 +142,13 @@ export default function App() {
     document.documentElement.style.scrollBehavior = "smooth";
   }, []);
 
+  // ================= RESET MESSAGE AUTO HIDE =================
+  useEffect(() => {
+    if (!resetInfo) return;
+    const timer = setTimeout(() => setResetInfo(""), 3000);
+    return () => clearTimeout(timer);
+  }, [resetInfo]);
+
   // ================= REFERRAL ANTI HILANG =================
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -149,50 +162,6 @@ export default function App() {
       if (saved) setRefCode(saved);
     }
   }, []);
-
-  // ================= REALTIME CURRENT USER =================
-  useEffect(() => {
-    if (!auth.currentUser || isAdmin) return;
-
-    const unsub = onSnapshot(doc(db, "users", auth.currentUser.uid), (snap) => {
-      if (snap.exists()) {
-        setUserData({ uid: snap.id, ...snap.data() });
-      }
-    });
-
-    return () => unsub();
-  }, [isAdmin]);
-
-  // ================= REALTIME ADMIN =================
-  useEffect(() => {
-    if (!isAdmin) return;
-
-    const unsubUsers = onSnapshot(collection(db, "users"), (snap) => {
-      const rows = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
-      setUsersAdmin(rows);
-    });
-
-    const unsubFeed = onSnapshot(
-      collection(db, "admin_notifications"),
-      (snap) => {
-        const rows = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
-        rows.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
-        setAdminFeed(rows);
-      }
-    );
-
-    const unsubKomisi = onSnapshot(collection(db, "komisi"), (snap) => {
-      const rows = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
-      rows.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
-      setKomisiRows(rows);
-    });
-
-    return () => {
-      unsubUsers();
-      unsubFeed();
-      unsubKomisi();
-    };
-  }, [isAdmin]);
 
   // ================= HELPERS DB =================
   const addAdminNotif = async (title, message, extra = {}) => {
@@ -257,12 +226,101 @@ export default function App() {
     );
   };
 
+  // ================= AUTO LOGIN / PERSISTENT LOGIN =================
+  useEffect(() => {
+    const unsub = onAuthStateChanged(auth, async (authUser) => {
+      try {
+        if (!authUser) {
+          setIsAdmin(false);
+          setUserData(null);
+          setUsersAdmin([]);
+          setAdminFeed([]);
+          setKomisiRows([]);
+          setPage("home");
+          setAuthChecked(true);
+          return;
+        }
+
+        const admin = await checkIsAdmin(authUser, authUser.email || "");
+
+        if (admin) {
+          setIsAdmin(true);
+          setPage("admin");
+          setAuthChecked(true);
+          return;
+        }
+
+        setIsAdmin(false);
+        const loaded = await loadUserData(authUser.uid);
+
+        if (loaded) {
+          setPage("dashboard");
+        } else {
+          await signOut(auth);
+          setPage("home");
+        }
+      } catch (err) {
+        console.log(err);
+        setPage("home");
+      } finally {
+        setAuthChecked(true);
+      }
+    });
+
+    return () => unsub();
+  }, []);
+
+  // ================= REALTIME CURRENT USER =================
+  useEffect(() => {
+    if (!auth.currentUser || isAdmin) return;
+
+    const unsub = onSnapshot(doc(db, "users", auth.currentUser.uid), (snap) => {
+      if (snap.exists()) {
+        setUserData({ uid: snap.id, ...snap.data() });
+      }
+    });
+
+    return () => unsub();
+  }, [isAdmin]);
+
+  // ================= REALTIME ADMIN =================
+  useEffect(() => {
+    if (!isAdmin) return;
+
+    const unsubUsers = onSnapshot(collection(db, "users"), (snap) => {
+      const rows = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+      setUsersAdmin(rows);
+    });
+
+    const unsubFeed = onSnapshot(
+      collection(db, "admin_notifications"),
+      (snap) => {
+        const rows = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+        rows.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+        setAdminFeed(rows);
+      }
+    );
+
+    const unsubKomisi = onSnapshot(collection(db, "komisi"), (snap) => {
+      const rows = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+      rows.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+      setKomisiRows(rows);
+    });
+
+    return () => {
+      unsubUsers();
+      unsubFeed();
+      unsubKomisi();
+    };
+  }, [isAdmin]);
+
   const processReferralReward = async ({
     buyerUser,
     paketTerbeli,
     sumber,
     countAsReferral,
   }) => {
+    if (sumber !== "pendaftaran") return;
     if (!buyerUser?.referredBy) return;
 
     const q = query(
@@ -438,6 +496,8 @@ export default function App() {
 
       setLoading(true);
 
+      await setPersistence(auth, browserLocalPersistence);
+
       const result = await signInWithEmailAndPassword(auth, email, password);
       const authUser = result.user;
 
@@ -466,8 +526,18 @@ export default function App() {
     }
   };
 
-  const forgotPassword = () => {
-    window.open(WA_ADMIN, "_blank");
+  const forgotPassword = async () => {
+    if (!email) {
+      setResetInfo("❌ Masukkan email terlebih dahulu.");
+      return;
+    }
+
+    try {
+      await sendPasswordResetEmail(auth, email);
+      setResetInfo("✅ Reset password akan dikirim ke email kamu.");
+    } catch (err) {
+      setResetInfo("❌ Email tidak ditemukan atau terjadi kesalahan.");
+    }
   };
 
   const handleLogout = async () => {
@@ -679,15 +749,6 @@ Mohon diproses ya kak 🙏`;
         },
         { merge: true }
       );
-
-      if (u.referredBy) {
-        await processReferralReward({
-          buyerUser: { ...u, uid: u.id },
-          paketTerbeli: paketBaru,
-          sumber: "update paket",
-          countAsReferral: false,
-        });
-      }
 
       await addAdminNotif(
         "Update paket di-approve",
@@ -938,6 +999,23 @@ Mohon diproses ya kak 🙏`;
     });
   }, [adminFeed]);
 
+  if (!authChecked) {
+    return (
+      <div
+        style={{
+          minHeight: "100vh",
+          background: "#020617",
+          color: "white",
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+        }}
+      >
+        Loading...
+      </div>
+    );
+  }
+
   // ================= STYLES =================
   const container = {
     minHeight: "100vh",
@@ -1125,7 +1203,30 @@ Mohon diproses ya kak 🙏`;
             }}
             onClick={forgotPassword}
           >
-            Lupa password?
+            🔑 Reset Password
+          </p>
+
+          {resetInfo && (
+            <div
+              style={{
+                marginTop: 10,
+                padding: "10px 12px",
+                borderRadius: 10,
+                fontSize: 13,
+                fontWeight: 500,
+                background: resetInfo.includes("❌") ? "#450a0a" : "#052e16",
+                color: resetInfo.includes("❌") ? "#f87171" : "#4ade80",
+                border: `1px solid ${
+                  resetInfo.includes("❌") ? "#dc2626" : "#16a34a"
+                }`,
+              }}
+            >
+              {resetInfo}
+            </div>
+          )}
+
+          <p style={{ marginTop: 10, fontSize: 12, color: "#94a3b8" }}>
+            Reset password akan dikirim ke email kamu
           </p>
 
           <p style={{ marginTop: 10, fontSize: 14 }}>
@@ -1278,7 +1379,6 @@ Mohon diproses ya kak 🙏`;
             </button>
           </div>
 
-          {/* OVERVIEW */}
           <div
             style={{
               display: "grid",
@@ -1414,7 +1514,6 @@ Mohon diproses ya kak 🙏`;
             </div>
           </SectionCard>
 
-          {/* COLLAPSE */}
           <div style={{ display: "grid", gap: 12 }}>
             <div>
               <div
@@ -2337,40 +2436,7 @@ Mohon diproses ya kak 🙏`;
               </div>
             )}
           </div>
-          <a
-            href={`${WA_ADMIN}?text=${encodeURIComponent(
-              `Halo Admin Pristore 🙏
 
-Saya ${userData.namaLengkap}
-
-📧 Email: ${userData.email}
-📦 Paket: ${userData.paket}
-📊 Status: ${userData.status}
-
-Mohon dibantu ya kak 🙏`
-            )}`}
-            target="_blank"
-            rel="noreferrer"
-            style={{
-              position: "fixed",
-              bottom: 20,
-              right: 20,
-              background: "#22c55e",
-              color: "white",
-              width: 56,
-              height: 56,
-              borderRadius: "50%",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              textDecoration: "none",
-              boxShadow: "0 10px 25px rgba(0,0,0,0.4)",
-              fontSize: 22,
-              zIndex: 999,
-            }}
-          >
-            💬
-          </a>
           <div style={panel}>
             <h3 style={sectionTitle}>Notifikasi Customer</h3>
             <div style={appBox}>
@@ -2399,6 +2465,41 @@ Mohon dibantu ya kak 🙏`
             </div>
           </div>
         </div>
+
+        <a
+          href={`${WA_ADMIN}?text=${encodeURIComponent(
+            `Halo Admin Pristore 🙏
+
+Saya ${userData.namaLengkap}
+
+📧 Email: ${userData.email}
+📦 Paket: ${userData.paket}
+📊 Status: ${userData.status}
+
+Mohon dibantu ya kak 🙏`
+          )}`}
+          target="_blank"
+          rel="noreferrer"
+          style={{
+            position: "fixed",
+            bottom: 20,
+            right: 20,
+            background: "#22c55e",
+            color: "white",
+            width: 56,
+            height: 56,
+            borderRadius: "50%",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            textDecoration: "none",
+            boxShadow: "0 10px 25px rgba(0,0,0,0.4)",
+            fontSize: 22,
+            zIndex: 999,
+          }}
+        >
+          💬
+        </a>
       </div>
     );
   }
