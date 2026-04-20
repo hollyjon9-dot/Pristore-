@@ -22,14 +22,21 @@ import {
   where,
   getDocs,
   onSnapshot,
+  updateDoc,
 } from "firebase/firestore";
+import { getMessaging, getToken, onMessage } from "firebase/messaging";
 
 // ================= FIREBASE =================
 const firebaseConfig = {
   apiKey: "AIzaSyDef4V0YWxFLVNKjY8qWXPld6iLR9jWpcE",
   authDomain: "pristore-3cd7d.firebaseapp.com",
   projectId: "pristore-3cd7d",
+  messagingSenderId: "521855008847",
+  appId: "1:521855008847:web:bb0bf7c8f758b8a7c16a3a",
 };
+
+const VAPID_KEY =
+  "BJZlLjKZqxecyE5oouL1CdFjZct7LLZmB1g0gdDTGd8naqTWzGKzfr3hmhe6eN8s9Ou1BFTiC9Y8_9UevU54dhw";
 
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
@@ -83,6 +90,7 @@ const makeNotif = (title, message) => ({
   title,
   message,
   createdAt: nowTs(),
+  read: false,
 });
 
 const safe = (v) => (v === undefined || v === null || v === "" ? "-" : v);
@@ -99,6 +107,18 @@ const toDateKey = (ts) => {
 const formatDateTime = (ts) => {
   if (!ts) return "-";
   return new Date(ts).toLocaleString("id-ID");
+};
+
+const setAppBadgeCount = async (count) => {
+  try {
+    if (count > 0 && "setAppBadge" in navigator) {
+      await navigator.setAppBadge(count);
+    } else if (count <= 0 && "clearAppBadge" in navigator) {
+      await navigator.clearAppBadge();
+    }
+  } catch (err) {
+    console.log("Badge API tidak aktif:", err);
+  }
 };
 
 // ================= APP =================
@@ -134,6 +154,64 @@ export default function App() {
   const [selectedDate, setSelectedDate] = useState(toDateKey(nowTs()));
   const [openSection, setOpenSection] = useState("overview");
   const [openNotifGroup, setOpenNotifGroup] = useState("daftar");
+
+  // ================= BADGE STATE =================
+  const [adminUnreadCount, setAdminUnreadCount] = useState(0);
+  const [customerUnreadCount, setCustomerUnreadCount] = useState(0);
+
+  // ================= PUSH SETUP =================
+  useEffect(() => {
+    const setupMessaging = async () => {
+      try {
+        if (!("Notification" in window)) return;
+        if (!auth.currentUser) return;
+
+        const permission = await Notification.requestPermission();
+        if (permission !== "granted") return;
+
+        const messaging = getMessaging(app);
+
+        const token = await getToken(messaging, {
+          vapidKey: VAPID_KEY,
+        });
+
+        if (token) {
+          console.log("TOKEN:", token);
+
+          await setDoc(
+            doc(db, "device_tokens", token),
+            {
+              token,
+              uid: auth.currentUser?.uid || "",
+              role: isAdmin ? "admin" : "customer",
+              createdAt: Date.now(),
+            },
+            { merge: true }
+          );
+        }
+
+        onMessage(messaging, (payload) => {
+          console.log("Notif masuk:", payload);
+
+          if (payload?.notification) {
+            new Notification(payload.notification.title, {
+              body: payload.notification.body,
+              icon: "/logo192.png",
+            });
+          }
+
+          if ("setAppBadge" in navigator) {
+            const count = Number(payload?.data?.unreadCount || 1);
+            navigator.setAppBadge(count);
+          }
+        });
+      } catch (err) {
+        console.log("Error messaging:", err);
+      }
+    };
+
+    setupMessaging();
+  }, [isAdmin]);
 
   // ================= APP FEEL =================
   useEffect(() => {
@@ -226,6 +304,25 @@ export default function App() {
     );
   };
 
+  const markAllCustomerNotifRead = async () => {
+    try {
+      if (!userData?.uid) return;
+
+      const updated = (userData.notifCustomer || []).map((n) => ({
+        ...n,
+        read: true,
+      }));
+
+      await updateDoc(doc(db, "users", userData.uid), {
+        notifCustomer: updated,
+      });
+
+      await setAppBadgeCount(0);
+    } catch (err) {
+      console.log(err);
+    }
+  };
+
   // ================= AUTO LOGIN / PERSISTENT LOGIN =================
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, async (authUser) => {
@@ -313,6 +410,21 @@ export default function App() {
       unsubKomisi();
     };
   }, [isAdmin]);
+
+  // ================= BADGE COUNTS =================
+  useEffect(() => {
+    const unread = (adminFeed || []).filter((n) => n.read !== true).length;
+    setAdminUnreadCount(unread);
+    if (isAdmin) setAppBadgeCount(unread);
+  }, [adminFeed, isAdmin]);
+
+  useEffect(() => {
+    const unread = (userData?.notifCustomer || []).filter(
+      (n) => n.read !== true
+    ).length;
+    setCustomerUnreadCount(unread);
+    if (!isAdmin && userData) setAppBadgeCount(unread);
+  }, [userData, isAdmin]);
 
   const processReferralReward = async ({
     buyerUser,
@@ -559,6 +671,9 @@ export default function App() {
     setShowHistory(false);
     setEmail("");
     setPassword("");
+    setAdminUnreadCount(0);
+    setCustomerUnreadCount(0);
+    setAppBadgeCount(0);
   };
 
   // ================= CUSTOMER ACTIONS =================
@@ -1388,6 +1503,7 @@ Mohon diproses ya kak 🙏`;
             }}
           >
             <StatCard title="🔔 Notifikasi" value={totalNotif} />
+            <StatCard title="🔴 Belum Dibaca" value={adminUnreadCount} />
             <StatCard title="👥 Total User" value={usersAdmin.length} />
             <StatCard
               title="💰 Total Komisi"
@@ -1523,6 +1639,7 @@ Mohon diproses ya kak 🙏`;
                 }
               >
                 🔔 Notifikasi Admin
+                {adminUnreadCount > 0 ? ` (${adminUnreadCount})` : ""}
               </div>
 
               {openSection === "notif" && (
@@ -2152,6 +2269,67 @@ Mohon diproses ya kak 🙏`;
           </div>
 
           <div style={panel}>
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                gap: 12,
+                flexWrap: "wrap",
+                marginBottom: 12,
+              }}
+            >
+              <h3 style={{ ...sectionTitle, margin: 0 }}>
+                Notifikasi Customer
+                {customerUnreadCount > 0 ? ` (${customerUnreadCount})` : ""}
+              </h3>
+
+              {(userData.notifCustomer || []).length > 0 && (
+                <button
+                  style={{
+                    background: "#2563eb",
+                    color: "white",
+                    border: "none",
+                    borderRadius: 10,
+                    padding: "10px 14px",
+                    fontWeight: 700,
+                    cursor: "pointer",
+                  }}
+                  onClick={markAllCustomerNotifRead}
+                >
+                  Tandai Semua Dibaca
+                </button>
+              )}
+            </div>
+
+            <div style={appBox}>
+              {!userData.notifCustomer ||
+              userData.notifCustomer.length === 0 ? (
+                <p style={{ margin: 0 }}>Belum ada notifikasi.</p>
+              ) : (
+                [...userData.notifCustomer]
+                  .sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0))
+                  .slice(0, 10)
+                  .map((n) => (
+                    <div
+                      key={n.id}
+                      style={{
+                        padding: "10px 0",
+                        borderBottom: "1px solid #1e293b",
+                      }}
+                    >
+                      <p style={{ margin: "4px 0", fontWeight: 700 }}>
+                        {n.read ? "✓ " : "🔴 "}
+                        {n.title}
+                      </p>
+                      <p style={{ margin: "4px 0" }}>{n.message}</p>
+                    </div>
+                  ))
+              )}
+            </div>
+          </div>
+
+          <div style={panel}>
             <h3 style={sectionTitle}>Profil Customer</h3>
             <div style={appBox}>
               <p style={{ margin: "6px 0" }}>
@@ -2456,6 +2634,7 @@ Mohon diproses ya kak 🙏`;
                       }}
                     >
                       <p style={{ margin: "4px 0", fontWeight: 700 }}>
+                        {n.read ? "✓ " : "🔴 "}
                         {n.title}
                       </p>
                       <p style={{ margin: "4px 0" }}>{n.message}</p>
