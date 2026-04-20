@@ -148,6 +148,7 @@ export default function App() {
   // ================= ADMIN STATE =================
   const [usersAdmin, setUsersAdmin] = useState([]);
   const [adminFeed, setAdminFeed] = useState([]);
+  const [selectedAdminNotifIds, setSelectedAdminNotifIds] = useState([]);
   const [komisiRows, setKomisiRows] = useState([]);
   const [search, setSearch] = useState("");
   const [filterPaket, setFilterPaket] = useState("all");
@@ -322,7 +323,43 @@ export default function App() {
       console.log(err);
     }
   };
+  // ===== NOTIF PRO =====
+  const deleteAdminNotif = async (id) => {
+    const ok = window.confirm("Yakin mau hapus?");
+    if (!ok) return;
+    await deleteDoc(doc(db, "admin_notifications", id));
+  };
 
+  const deleteAllAdminNotif = async () => {
+    const ok = window.confirm("Hapus semua notif?");
+    if (!ok) return;
+
+    for (const n of adminFeed) {
+      await deleteDoc(doc(db, "admin_notifications", n.id));
+    }
+  };
+
+  const toggleSelectNotif = (id) => {
+    setSelectedAdminNotifIds((prev) =>
+      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
+    );
+  };
+
+  const deleteSelectedNotif = async () => {
+    if (!selectedAdminNotifIds.length) {
+      alert("Pilih notif dulu");
+      return;
+    }
+
+    const ok = window.confirm("Hapus notif dipilih?");
+    if (!ok) return;
+
+    for (const id of selectedAdminNotifIds) {
+      await deleteDoc(doc(db, "admin_notifications", id));
+    }
+
+    setSelectedAdminNotifIds([]);
+  };
   // ================= AUTO LOGIN / PERSISTENT LOGIN =================
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, async (authUser) => {
@@ -1641,9 +1678,21 @@ Mohon diproses ya kak 🙏`;
                 🔔 Notifikasi Admin
                 {adminUnreadCount > 0 ? ` (${adminUnreadCount})` : ""}
               </div>
-
               {openSection === "notif" && (
                 <SectionCard title="🔔 Notifikasi Admin">
+                  <div style={{ marginBottom: 16 }}>
+                    <button
+                      onClick={() =>
+                        setSelectedAdminNotifIds(adminFeed.map((n) => n.id))
+                      }
+                    >
+                      Pilih Semua
+                    </button>
+
+                    <button onClick={deleteSelectedNotif}>Hapus Dipilih</button>
+
+                    <button onClick={deleteAllAdminNotif}>Hapus Semua</button>
+                  </div>
                   <div
                     style={{
                       display: "flex",
@@ -1693,6 +1742,12 @@ Mohon diproses ya kak 🙏`;
                       ) : (
                         notifDaftarUpgrade.slice(0, 30).map((n) => (
                           <DataCard key={n.id}>
+                            <input
+                              type="checkbox"
+                              checked={selectedAdminNotifIds.includes(n.id)}
+                              onChange={() => toggleSelectNotif(n.id)}
+                            />
+
                             <p style={{ margin: "0 0 6px 0", fontWeight: 700 }}>
                               {n.title}
                             </p>
@@ -1707,6 +1762,7 @@ Mohon diproses ya kak 🙏`;
                             >
                               {n.read ? "✓ Sudah dibaca" : "🔴 Belum dibaca"}
                             </p>
+
                             {!n.read && (
                               <button
                                 style={{
@@ -1724,6 +1780,22 @@ Mohon diproses ya kak 🙏`;
                                 Tandai Dibaca
                               </button>
                             )}
+                            <button
+                              style={{
+                                marginTop: 8,
+                                marginLeft: 8,
+                                border: "none",
+                                borderRadius: 10,
+                                padding: "8px 12px",
+                                background: "#dc2626",
+                                color: "white",
+                                fontWeight: 700,
+                                cursor: "pointer",
+                              }}
+                              onClick={() => deleteAdminNotif(n.id)}
+                            >
+                              Hapus
+                            </button>
                           </DataCard>
                         ))
                       )}
@@ -1737,6 +1809,12 @@ Mohon diproses ya kak 🙏`;
                       ) : (
                         notifBayarBonus.slice(0, 30).map((n) => (
                           <DataCard key={n.id}>
+                            <input
+                              type="checkbox"
+                              checked={selectedAdminNotifIds.includes(n.id)}
+                              onChange={() => toggleSelectNotif(n.id)}
+                            />
+
                             <p style={{ margin: "0 0 6px 0", fontWeight: 700 }}>
                               {n.title}
                             </p>
@@ -1751,6 +1829,7 @@ Mohon diproses ya kak 🙏`;
                             >
                               {n.read ? "✓ Sudah dibaca" : "🟢 Belum dibaca"}
                             </p>
+
                             {!n.read && (
                               <button
                                 style={{
@@ -1768,6 +1847,22 @@ Mohon diproses ya kak 🙏`;
                                 Tandai Dibaca
                               </button>
                             )}
+                            <button
+                              style={{
+                                marginTop: 8,
+                                marginLeft: 8,
+                                border: "none",
+                                borderRadius: 10,
+                                padding: "8px 12px",
+                                background: "#dc2626",
+                                color: "white",
+                                fontWeight: 700,
+                                cursor: "pointer",
+                              }}
+                              onClick={() => deleteAdminNotif(n.id)}
+                            >
+                              Hapus
+                            </button>
                           </DataCard>
                         ))
                       )}
