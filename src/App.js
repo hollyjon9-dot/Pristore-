@@ -2304,439 +2304,723 @@ Mohon diproses ya kak 🙏`;
 
     const referralLink = `${WEBSITE_URL}/?ref=${userData.referralCode}`;
 
+    const statusMap = {
+      approved: { bg: "rgba(34,197,94,0.15)", color: "#4ade80", label: "Aktif" },
+      pending: { bg: "rgba(250,204,21,0.15)", color: "#facc15", label: "Menunggu" },
+      rejected: { bg: "rgba(239,68,68,0.15)", color: "#f87171", label: "Ditolak" },
+    };
+    const sb =
+      statusMap[userData.status] || {
+        bg: "rgba(148,163,184,0.15)",
+        color: "#cbd5e1",
+        label: userData.status || "-",
+      };
+
+    const surface = {
+      background: "#0f172a",
+      borderRadius: 16,
+      padding: 16,
+      marginBottom: 14,
+      border: "1px solid rgba(148,163,184,0.08)",
+      boxSizing: "border-box",
+    };
+    const subtle = {
+      background: "rgba(2,6,23,0.6)",
+      borderRadius: 12,
+      padding: 12,
+      border: "1px solid rgba(148,163,184,0.06)",
+    };
+    const sectionLabel = {
+      margin: "0 0 12px 0",
+      fontSize: 12,
+      fontWeight: 700,
+      color: "#94a3b8",
+      letterSpacing: 0.6,
+      textTransform: "uppercase",
+    };
+    const labelText = { color: "#94a3b8", fontSize: 13 };
+    const valueText = {
+      color: "#e2e8f0",
+      fontWeight: 600,
+      textAlign: "right",
+      wordBreak: "break-word",
+      fontSize: 13,
+    };
+    const rowBase = {
+      display: "flex",
+      justifyContent: "space-between",
+      alignItems: "center",
+      gap: 12,
+      padding: "10px 0",
+      borderBottom: "1px solid rgba(148,163,184,0.08)",
+    };
+    const rowLast = { ...rowBase, borderBottom: "none" };
+    const statTile = {
+      background: "rgba(2,6,23,0.6)",
+      borderRadius: 12,
+      padding: 12,
+      border: "1px solid rgba(148,163,184,0.06)",
+    };
+    const linkAction = {
+      background: "transparent",
+      border: "none",
+      color: "#60a5fa",
+      fontWeight: 600,
+      fontSize: 12,
+      cursor: "pointer",
+      padding: 0,
+    };
+    const pendingBox = {
+      marginTop: 12,
+      padding: 10,
+      background: "rgba(250,204,21,0.1)",
+      border: "1px solid rgba(250,204,21,0.3)",
+      borderRadius: 10,
+      color: "#facc15",
+      fontSize: 13,
+      fontWeight: 600,
+    };
+
+    const progressPct = Math.min(
+      100,
+      Math.round(((userData.bonusProgress || 0) / 10) * 100)
+    );
+
+    const renderHistoryItem = (item, idx, arr) => (
+      <div
+        key={item.id}
+        style={{
+          padding: "10px 0",
+          borderBottom:
+            idx === arr.length - 1
+              ? "none"
+              : "1px solid rgba(148,163,184,0.08)",
+          fontSize: 13,
+        }}
+      >
+        <div style={{ display: "flex", justifyContent: "space-between" }}>
+          <span style={{ fontWeight: 700 }}>{formatRp(item.amount)}</span>
+          <span
+            style={{
+              color: item.status === "approved" ? "#4ade80" : "#facc15",
+              fontWeight: 600,
+              textTransform: "capitalize",
+            }}
+          >
+            {item.status}
+          </span>
+        </div>
+        <p style={{ margin: "4px 0 0 0", color: "#94a3b8", fontSize: 12 }}>
+          {formatDateTime(item.approvedAt)}
+        </p>
+      </div>
+    );
+
     return (
-      <div style={{ ...container, paddingTop: 0 }}>
-        <div style={{ width: "100%", maxWidth: 900, margin: "0 auto" }}>
+      <div style={{ ...container, paddingTop: 0, paddingBottom: 100 }}>
+        <div style={{ width: "100%", maxWidth: 480, margin: "0 auto" }}>
+          {/* Top bar */}
           <div
             style={{
               position: "sticky",
               top: 0,
               zIndex: 10,
               background: "#020617",
-              padding: "12px 0",
-              borderBottom: "1px solid rgba(255,255,255,0.05)",
-              marginBottom: 14,
+              padding: "14px 0",
+              marginBottom: 16,
+              borderBottom: "1px solid rgba(255,255,255,0.06)",
+              display: "flex",
+              alignItems: "center",
+              gap: 12,
             }}
           >
-            <h3 style={{ margin: 0, fontSize: 16 }}>
-              👋 {userData.namaLengkap}
-            </h3>
+            <div
+              style={{
+                width: 40,
+                height: 40,
+                borderRadius: "50%",
+                background: "linear-gradient(135deg,#22c55e,#0ea5e9)",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                fontWeight: 800,
+                fontSize: 16,
+                flexShrink: 0,
+              }}
+            >
+              {(userData.namaLengkap || "U").trim().charAt(0).toUpperCase()}
+            </div>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <p style={{ margin: 0, fontSize: 11, color: "#94a3b8" }}>
+                Selamat datang
+              </p>
+              <p
+                style={{
+                  margin: 0,
+                  fontSize: 14,
+                  fontWeight: 700,
+                  whiteSpace: "nowrap",
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                }}
+              >
+                {userData.namaLengkap}
+              </p>
+            </div>
+            <span
+              style={{
+                background: sb.bg,
+                color: sb.color,
+                fontSize: 11,
+                fontWeight: 700,
+                padding: "4px 10px",
+                borderRadius: 999,
+              }}
+            >
+              {sb.label}
+            </span>
+            <button
+              onClick={handleLogout}
+              style={{
+                background: "transparent",
+                border: "1px solid rgba(148,163,184,0.2)",
+                color: "#cbd5e1",
+                padding: "8px 12px",
+                borderRadius: 10,
+                cursor: "pointer",
+                fontWeight: 600,
+                fontSize: 12,
+              }}
+            >
+              Keluar
+            </button>
           </div>
 
+          {/* Balance hero */}
           <div
             style={{
-              background: "linear-gradient(90deg,#22c55e,#16a34a)",
-              padding: 16,
-              borderRadius: 16,
+              background: "linear-gradient(135deg,#16a34a,#0d9488)",
+              padding: 18,
+              borderRadius: 18,
               marginBottom: 14,
               color: "white",
+              boxShadow: "0 10px 25px rgba(22,163,74,0.25)",
             }}
           >
             <p style={{ margin: 0, fontSize: 12, opacity: 0.9 }}>
               Total Saldo Komisi
             </p>
-            <h2 style={{ margin: "4px 0 0 0" }}>{formatRp(totalKomisiUser)}</h2>
+            <h2
+              style={{ margin: "6px 0 0 0", fontSize: 28, letterSpacing: -0.5 }}
+            >
+              {formatRp(totalKomisiUser)}
+            </h2>
+            <p style={{ margin: "10px 0 0 0", fontSize: 12, opacity: 0.85 }}>
+              Paket: <strong>{userData.paket || "-"}</strong>
+            </p>
           </div>
 
+          {/* Stats grid */}
           <div
             style={{
-              ...panel,
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-              gap: 12,
-              flexWrap: "wrap",
+              display: "grid",
+              gridTemplateColumns: "1fr 1fr",
+              gap: 10,
+              marginBottom: 14,
             }}
           >
-            <div>
-              <h2 style={{ margin: 0 }}>Customer Dashboard</h2>
-              <p style={{ margin: "6px 0 0 0", opacity: 0.8 }}>
-                Kelola akun, pembayaran, referral, komisi, bonus, dan penarikan.
+            <div style={statTile}>
+              <p style={{ margin: 0, fontSize: 11, color: "#94a3b8" }}>
+                Komisi Bisa Ditarik
+              </p>
+              <p style={{ margin: "4px 0 0 0", fontSize: 15, fontWeight: 700 }}>
+                {formatRp(userData.komisiSaldo || 0)}
               </p>
             </div>
-
-            <button
-              style={{ ...btnDark, width: 140, marginTop: 0 }}
-              onClick={handleLogout}
-            >
-              Logout
-            </button>
+            <div style={statTile}>
+              <p style={{ margin: 0, fontSize: 11, color: "#94a3b8" }}>
+                Bonus Referral
+              </p>
+              <p style={{ margin: "4px 0 0 0", fontSize: 15, fontWeight: 700 }}>
+                {formatRp(totalBonusReady)}
+              </p>
+            </div>
+            <div style={statTile}>
+              <p style={{ margin: 0, fontSize: 11, color: "#94a3b8" }}>
+                Sudah Ditarik
+              </p>
+              <p style={{ margin: "4px 0 0 0", fontSize: 15, fontWeight: 700 }}>
+                {formatRp(userData.totalWithdrawn || 0)}
+              </p>
+            </div>
+            <div style={statTile}>
+              <p style={{ margin: 0, fontSize: 11, color: "#94a3b8" }}>
+                Total Referral
+              </p>
+              <p style={{ margin: "4px 0 0 0", fontSize: 15, fontWeight: 700 }}>
+                {userData.jumlahRekrut || 0} orang
+              </p>
+            </div>
           </div>
 
-          <div style={panel}>
+          {/* Notifikasi */}
+          <div style={surface}>
             <div
               style={{
                 display: "flex",
                 justifyContent: "space-between",
                 alignItems: "center",
-                gap: 12,
-                flexWrap: "wrap",
                 marginBottom: 12,
               }}
             >
-              <h3 style={{ ...sectionTitle, margin: 0 }}>
-                Notifikasi Customer
-                {customerUnreadCount > 0 ? ` (${customerUnreadCount})` : ""}
+              <h3 style={{ ...sectionLabel, margin: 0 }}>
+                Notifikasi
+                {customerUnreadCount > 0 && (
+                  <span
+                    style={{
+                      background: "#ef4444",
+                      color: "white",
+                      fontSize: 10,
+                      padding: "2px 7px",
+                      borderRadius: 999,
+                      marginLeft: 8,
+                      letterSpacing: 0,
+                    }}
+                  >
+                    {customerUnreadCount}
+                  </span>
+                )}
               </h3>
-
               {(userData.notifCustomer || []).length > 0 && (
-                <button
-                  style={{
-                    background: "#2563eb",
-                    color: "white",
-                    border: "none",
-                    borderRadius: 10,
-                    padding: "10px 14px",
-                    fontWeight: 700,
-                    cursor: "pointer",
-                  }}
-                  onClick={markAllCustomerNotifRead}
-                >
-                  Tandai Semua Dibaca
+                <button onClick={markAllCustomerNotifRead} style={linkAction}>
+                  Tandai semua
                 </button>
               )}
             </div>
-
-            <div style={appBox}>
+            <div style={subtle}>
               {!userData.notifCustomer ||
               userData.notifCustomer.length === 0 ? (
-                <p style={{ margin: 0 }}>Belum ada notifikasi.</p>
+                <p style={{ margin: 0, color: "#94a3b8", fontSize: 13 }}>
+                  Belum ada notifikasi.
+                </p>
               ) : (
                 [...userData.notifCustomer]
                   .sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0))
-                  .slice(0, 10)
-                  .map((n) => (
+                  .slice(0, 5)
+                  .map((n, idx, arr) => (
                     <div
                       key={n.id}
                       style={{
                         padding: "10px 0",
-                        borderBottom: "1px solid #1e293b",
+                        borderBottom:
+                          idx === arr.length - 1
+                            ? "none"
+                            : "1px solid rgba(148,163,184,0.08)",
+                        display: "flex",
+                        gap: 10,
+                        alignItems: "flex-start",
                       }}
                     >
-                      <p style={{ margin: "4px 0", fontWeight: 700 }}>
-                        {n.read ? "✓ " : "🔴 "}
-                        {n.title}
-                      </p>
-                      <p style={{ margin: "4px 0" }}>{n.message}</p>
+                      <span
+                        style={{
+                          width: 8,
+                          height: 8,
+                          borderRadius: "50%",
+                          background: n.read ? "#475569" : "#ef4444",
+                          marginTop: 6,
+                          flexShrink: 0,
+                        }}
+                      />
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <p
+                          style={{
+                            margin: 0,
+                            fontSize: 13,
+                            fontWeight: 700,
+                            color: "#e2e8f0",
+                          }}
+                        >
+                          {n.title}
+                        </p>
+                        <p
+                          style={{
+                            margin: "4px 0 0 0",
+                            fontSize: 12,
+                            color: "#94a3b8",
+                          }}
+                        >
+                          {n.message}
+                        </p>
+                      </div>
                     </div>
                   ))
               )}
             </div>
           </div>
 
-          <div style={panel}>
-            <h3 style={sectionTitle}>Profil Customer</h3>
-            <div style={appBox}>
-              <p style={{ margin: "6px 0" }}>
-                <strong>Nama:</strong> {userData.namaLengkap}
-              </p>
-              <p style={{ margin: "6px 0" }}>
-                <strong>Email:</strong> {userData.email}
-              </p>
-              <p style={{ margin: "6px 0" }}>
-                <strong>No HP:</strong> {userData.noHp}
-              </p>
-              <p style={{ margin: "6px 0" }}>
-                <strong>Bank/nomor rekening:</strong>{" "}
-                {userData.bankNomorRekening}
-              </p>
-              <p style={{ margin: "6px 0" }}>
-                <strong>Paket:</strong> {userData.paket}
-              </p>
-              <p style={{ margin: "6px 0" }}>
-                <strong>Status:</strong> {userData.status}
-              </p>
+          {/* Profil */}
+          <div style={surface}>
+            <h3 style={sectionLabel}>Profil</h3>
+            <div style={subtle}>
+              <div style={rowBase}>
+                <span style={labelText}>Nama</span>
+                <span style={valueText}>{userData.namaLengkap}</span>
+              </div>
+              <div style={rowBase}>
+                <span style={labelText}>Email</span>
+                <span style={valueText}>{userData.email}</span>
+              </div>
+              <div style={rowBase}>
+                <span style={labelText}>No HP</span>
+                <span style={valueText}>{userData.noHp}</span>
+              </div>
+              <div style={rowBase}>
+                <span style={labelText}>Bank / Rekening</span>
+                <span style={valueText}>{userData.bankNomorRekening}</span>
+              </div>
+              <div style={rowBase}>
+                <span style={labelText}>Paket</span>
+                <span style={valueText}>{userData.paket}</span>
+              </div>
+              <div style={rowLast}>
+                <span style={labelText}>Status</span>
+                <span style={{ ...valueText, color: sb.color }}>
+                  {sb.label}
+                </span>
+              </div>
             </div>
           </div>
 
-          <div style={panel}>
-            <h3 style={sectionTitle}>Referral Saya</h3>
-            <div style={appBox}>
-              <p style={{ margin: "6px 0" }}>
-                <strong>Kode Referral:</strong> {userData.referralCode}
-              </p>
-              <p style={{ margin: "6px 0" }}>
-                <strong>Total Referral:</strong> {userData.jumlahRekrut || 0}
-              </p>
-              <p style={{ margin: "6px 0" }}>
-                <strong>Progress Bonus:</strong> {userData.bonusProgress || 0}
-                /10
-              </p>
-              <p style={{ margin: "6px 0" }}>
-                <strong>Bonus Siap Dibayar:</strong> {formatRp(totalBonusReady)}
-              </p>
-              <p style={{ margin: "6px 0", wordBreak: "break-all" }}>
-                <strong>Link Referral:</strong>
-                <br />
-                {referralLink}
-              </p>
-
-              <button
-                style={btnBlue}
-                onClick={() => copyText(referralLink, "Link referral disalin.")}
+          {/* Referral */}
+          <div style={surface}>
+            <h3 style={sectionLabel}>Referral</h3>
+            <div style={subtle}>
+              <div style={rowBase}>
+                <span style={labelText}>Kode Referral</span>
+                <span
+                  style={{
+                    ...valueText,
+                    fontFamily: "monospace",
+                    letterSpacing: 1,
+                  }}
+                >
+                  {userData.referralCode}
+                </span>
+              </div>
+              <div style={rowBase}>
+                <span style={labelText}>Total Referral</span>
+                <span style={valueText}>{userData.jumlahRekrut || 0} orang</span>
+              </div>
+              <div
+                style={{
+                  padding: "10px 0",
+                  borderBottom: "1px solid rgba(148,163,184,0.08)",
+                }}
               >
-                Copy Link
-              </button>
+                <div
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    marginBottom: 6,
+                  }}
+                >
+                  <span style={labelText}>Progress Bonus</span>
+                  <span style={{ ...valueText, fontSize: 12 }}>
+                    {userData.bonusProgress || 0}/10
+                  </span>
+                </div>
+                <div
+                  style={{
+                    height: 6,
+                    background: "rgba(148,163,184,0.15)",
+                    borderRadius: 999,
+                    overflow: "hidden",
+                  }}
+                >
+                  <div
+                    style={{
+                      width: `${progressPct}%`,
+                      height: "100%",
+                      background: "linear-gradient(90deg,#22c55e,#0ea5e9)",
+                    }}
+                  />
+                </div>
+              </div>
+              <div style={rowLast}>
+                <span style={labelText}>Bonus Siap Dibayar</span>
+                <span style={{ ...valueText, color: "#4ade80" }}>
+                  {formatRp(totalBonusReady)}
+                </span>
+              </div>
             </div>
+
+            <div
+              style={{
+                marginTop: 12,
+                background: "rgba(2,6,23,0.6)",
+                padding: 10,
+                borderRadius: 10,
+                border: "1px solid rgba(148,163,184,0.06)",
+                wordBreak: "break-all",
+                fontSize: 12,
+                color: "#cbd5e1",
+              }}
+            >
+              {referralLink}
+            </div>
+            <button
+              style={{ ...btnBlue, marginTop: 10 }}
+              onClick={() => copyText(referralLink, "Link referral disalin.")}
+            >
+              Copy Link Referral
+            </button>
           </div>
 
-          <div style={panel}>
-            <h3 style={sectionTitle}>Keuangan</h3>
-            <div style={appBox}>
-              <p style={{ margin: "6px 0" }}>
-                <strong>Komisi Paket (Bisa Ditarik):</strong>{" "}
-                {formatRp(userData.komisiSaldo || 0)}
-              </p>
-              <p style={{ margin: "6px 0" }}>
-                <strong>Bonus Referral:</strong> {formatRp(totalBonusReady)}
-              </p>
-              <p style={{ margin: "6px 0" }}>
-                <strong>Total Sudah Ditarik:</strong>{" "}
-                {formatRp(userData.totalWithdrawn || 0)}
-              </p>
-            </div>
-
+          {/* Penarikan Saldo */}
+          <div style={surface}>
+            <h3 style={sectionLabel}>Penarikan Saldo</h3>
             <input
               style={input}
               placeholder="Jumlah yang akan ditarik"
               value={withdrawAmount}
               onChange={(e) => setWithdrawAmount(e.target.value)}
             />
-
             <button style={btnGold} onClick={submitWithdraw}>
               Tarik Saldo
             </button>
 
             {userData.withdrawRequest?.status === "pending" && (
-              <p style={{ marginTop: 12, color: "#facc15", fontWeight: 700 }}>
-                Permintaan penarikan {formatRp(userData.withdrawRequest.amount)}{" "}
-                sedang menunggu admin.
-              </p>
+              <div style={pendingBox}>
+                Penarikan {formatRp(userData.withdrawRequest.amount)} sedang
+                menunggu konfirmasi admin.
+              </div>
             )}
           </div>
 
-          <div style={panel}>
-            <h3 style={sectionTitle}>Pembayaran Pendaftaran</h3>
-            <div style={appBox}>
-              <p style={{ margin: "0 0 8px 0", fontWeight: 700 }}>
-                Metode Pembayaran
-              </p>
-              <p style={{ margin: "4px 0" }}>OVO 085889827352</p>
-              <p style={{ margin: "4px 0" }}>SEABANK 901503319741</p>
-              <p style={{ margin: "4px 0" }}>BANK JAGO 105830435142</p>
-              <p style={{ margin: "4px 0" }}>NEOBANK 5859459237817910</p>
-              <p style={{ margin: "4px 0" }}>A/n ( MAMDUHAM )</p>
-              <hr style={{ borderColor: "#1e293b", margin: "12px 0" }} />
-              <p style={{ margin: "6px 0" }}>
-                <strong>Paket:</strong> {userData.paket}
-              </p>
-              <p style={{ margin: "6px 0" }}>
-                <strong>Harga:</strong> {getHargaPaketLabel(userData.paket)}
-              </p>
+          {/* Pembayaran Pendaftaran */}
+          <div style={surface}>
+            <h3 style={sectionLabel}>Pembayaran Pendaftaran</h3>
 
-              <p
+            {userApproved ? (
+              <div
                 style={{
-                  marginTop: 10,
-                  fontSize: 12,
-                  color: "#ef4444",
-                  fontWeight: "bold",
+                  padding: 12,
+                  background: "rgba(34,197,94,0.1)",
+                  border: "1px solid rgba(34,197,94,0.3)",
+                  borderRadius: 10,
+                  color: "#4ade80",
+                  fontWeight: 600,
+                  fontSize: 13,
                 }}
               >
-                Jika sudah setuju dan melakukan pembayaran, uang tidak dapat
-                dikembalikan.
-              </p>
-
-              {userApproved && (
-                <p style={{ color: "#4ade80", fontWeight: 700 }}>
-                  Pembayaran pendaftaran sudah dikonfirmasi admin.
-                </p>
-              )}
-
-              {canShowBayarDaftar && (
-                <button style={btnGold} onClick={handleSudahBayarDaftar}>
-                  SUDAH TRANSFER KONFIRMASI DI SINI
-                </button>
-              )}
-
-              {!userApproved && userData.paymentRequestSent && (
-                <p style={{ marginTop: 12, color: "#facc15", fontWeight: 700 }}>
-                  Menunggu konfirmasi admin.
-                </p>
-              )}
-            </div>
-          </div>
-
-          <div style={panel}>
-            <h3 style={sectionTitle}>Upgrade Paket</h3>
-
-            {!userApproved ? (
-              <div style={appBox}>
-                <p style={{ margin: 0 }}>
-                  Akun harus di approve dulu oleh admin.
-                </p>
+                Pembayaran pendaftaran sudah dikonfirmasi admin.
               </div>
             ) : (
-              <div style={appBox}>
-                {!hasPendingUpgrade ? (
-                  <>
-                    {!showUpgradeOptions ? (
-                      <button
-                        style={btnPink}
-                        onClick={() => setShowUpgradeOptions(true)}
-                      >
-                        Update
-                      </button>
-                    ) : (
-                      <>
-                        <button
-                          style={btnBlue}
-                          onClick={() => chooseUpgradePackage("Premium")}
-                        >
-                          Paket Premium 250.000
-                        </button>
-
-                        <button
-                          style={btnGold}
-                          onClick={() => chooseUpgradePackage("Gold")}
-                        >
-                          Paket Gold 500.000
-                        </button>
-
-                        <button
-                          style={btnDark}
-                          onClick={() => setShowUpgradeOptions(false)}
-                        >
-                          Batal
-                        </button>
-                      </>
-                    )}
-                  </>
-                ) : (
-                  <>
-                    <p style={{ margin: "6px 0" }}>
-                      <strong>
-                        Request upgrade kamu sedang diproses admin.
-                      </strong>
+              <>
+                <div style={subtle}>
+                  <p
+                    style={{
+                      margin: "0 0 10px 0",
+                      fontSize: 11,
+                      color: "#94a3b8",
+                      fontWeight: 700,
+                      letterSpacing: 0.5,
+                      textTransform: "uppercase",
+                    }}
+                  >
+                    Metode Pembayaran
+                  </p>
+                  <div style={{ display: "grid", gap: 6, fontSize: 13 }}>
+                    <p style={{ margin: 0 }}>
+                      OVO <strong>085889827352</strong>
                     </p>
-                    <p style={{ margin: "6px 0" }}>
-                      Paket dipilih: <strong>{userData.upgradePackage}</strong>
+                    <p style={{ margin: 0 }}>
+                      SEABANK <strong>901503319741</strong>
                     </p>
-                  </>
+                    <p style={{ margin: 0 }}>
+                      BANK JAGO <strong>105830435142</strong>
+                    </p>
+                    <p style={{ margin: 0 }}>
+                      NEOBANK <strong>5859459237817910</strong>
+                    </p>
+                    <p style={{ margin: 0, color: "#94a3b8" }}>
+                      a/n MAMDUHAM
+                    </p>
+                  </div>
+                  <hr
+                    style={{
+                      borderColor: "rgba(148,163,184,0.1)",
+                      margin: "12px 0",
+                    }}
+                  />
+                  <div style={rowBase}>
+                    <span style={labelText}>Paket</span>
+                    <span style={valueText}>{userData.paket}</span>
+                  </div>
+                  <div style={rowLast}>
+                    <span style={labelText}>Harga</span>
+                    <span style={valueText}>
+                      {getHargaPaketLabel(userData.paket)}
+                    </span>
+                  </div>
+                </div>
+
+                <p
+                  style={{
+                    margin: "12px 0 0 0",
+                    fontSize: 11,
+                    color: "#f87171",
+                    fontWeight: 600,
+                  }}
+                >
+                  * Pembayaran yang sudah dilakukan tidak dapat dikembalikan.
+                </p>
+
+                {canShowBayarDaftar && (
+                  <button style={btnGold} onClick={handleSudahBayarDaftar}>
+                    Sudah Transfer, Konfirmasi
+                  </button>
                 )}
+
+                {!userApproved && userData.paymentRequestSent && (
+                  <div style={pendingBox}>Menunggu konfirmasi admin.</div>
+                )}
+              </>
+            )}
+          </div>
+
+          {/* Upgrade Paket */}
+          <div style={surface}>
+            <h3 style={sectionLabel}>Upgrade Paket</h3>
+
+            {!userApproved ? (
+              <p style={{ margin: 0, color: "#94a3b8", fontSize: 13 }}>
+                Akun harus disetujui admin terlebih dahulu.
+              </p>
+            ) : !hasPendingUpgrade ? (
+              !showUpgradeOptions ? (
+                <button
+                  style={btnPink}
+                  onClick={() => setShowUpgradeOptions(true)}
+                >
+                  Update Paket
+                </button>
+              ) : (
+                <>
+                  <button
+                    style={btnBlue}
+                    onClick={() => chooseUpgradePackage("Premium")}
+                  >
+                    Paket Premium · Rp 250.000
+                  </button>
+                  <button
+                    style={btnGold}
+                    onClick={() => chooseUpgradePackage("Gold")}
+                  >
+                    Paket Gold · Rp 500.000
+                  </button>
+                  <button
+                    style={btnDark}
+                    onClick={() => setShowUpgradeOptions(false)}
+                  >
+                    Batal
+                  </button>
+                </>
+              )
+            ) : (
+              <div
+                style={{
+                  padding: 12,
+                  background: "rgba(250,204,21,0.1)",
+                  border: "1px solid rgba(250,204,21,0.3)",
+                  borderRadius: 10,
+                }}
+              >
+                <p style={{ margin: 0, fontWeight: 700, color: "#facc15" }}>
+                  Request upgrade sedang diproses admin.
+                </p>
+                <p
+                  style={{
+                    margin: "6px 0 0 0",
+                    fontSize: 13,
+                    color: "#e2e8f0",
+                  }}
+                >
+                  Paket dipilih: <strong>{userData.upgradePackage}</strong>
+                </p>
               </div>
             )}
           </div>
 
-          <div style={panel}>
-            <h3 style={sectionTitle}>Riwayat</h3>
-
-            <button
-              style={btnDark}
-              onClick={() => setShowHistory(!showHistory)}
+          {/* Riwayat */}
+          <div style={surface}>
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+              }}
             >
-              {showHistory ? "Tutup Riwayat" : "Buka Riwayat"}
-            </button>
+              <h3 style={{ ...sectionLabel, margin: 0 }}>Riwayat</h3>
+              <button
+                onClick={() => setShowHistory(!showHistory)}
+                style={linkAction}
+              >
+                {showHistory ? "Tutup" : "Lihat"}
+              </button>
+            </div>
 
             {showHistory && (
               <div style={{ marginTop: 12 }}>
-                <div style={{ ...appBox, marginBottom: 12 }}>
-                  <p style={{ margin: "0 0 8px 0", fontWeight: 700 }}>
+                <div style={{ ...subtle, marginBottom: 10 }}>
+                  <p
+                    style={{
+                      margin: "0 0 8px 0",
+                      fontWeight: 700,
+                      fontSize: 13,
+                    }}
+                  >
                     Riwayat Penarikan
                   </p>
-
                   {!userData.withdrawalHistory ||
                   userData.withdrawalHistory.length === 0 ? (
-                    <p style={{ margin: 0 }}>Belum ada riwayat penarikan.</p>
+                    <p style={{ margin: 0, color: "#94a3b8", fontSize: 13 }}>
+                      Belum ada riwayat penarikan.
+                    </p>
                   ) : (
                     [...userData.withdrawalHistory]
-                      .sort((a, b) => (b.approvedAt || 0) - (a.approvedAt || 0))
-                      .map((item) => (
-                        <div
-                          key={item.id}
-                          style={{
-                            padding: "10px 0",
-                            borderBottom: "1px solid #1e293b",
-                          }}
-                        >
-                          <p style={{ margin: "4px 0" }}>
-                            <strong>Jumlah:</strong> {formatRp(item.amount)}
-                          </p>
-                          <p style={{ margin: "4px 0" }}>
-                            <strong>Status:</strong> {item.status}
-                          </p>
-                          <p style={{ margin: "4px 0" }}>
-                            <strong>Tanggal:</strong>{" "}
-                            {formatDateTime(item.approvedAt)}
-                          </p>
-                        </div>
-                      ))
+                      .sort(
+                        (a, b) => (b.approvedAt || 0) - (a.approvedAt || 0)
+                      )
+                      .map(renderHistoryItem)
                   )}
                 </div>
 
-                <div style={appBox}>
-                  <p style={{ margin: "0 0 8px 0", fontWeight: 700 }}>
+                <div style={subtle}>
+                  <p
+                    style={{
+                      margin: "0 0 8px 0",
+                      fontWeight: 700,
+                      fontSize: 13,
+                    }}
+                  >
                     History Bonus
                   </p>
-
                   {!userData.bonusHistory ||
                   userData.bonusHistory.length === 0 ? (
-                    <p style={{ margin: 0 }}>Belum ada history bonus.</p>
+                    <p style={{ margin: 0, color: "#94a3b8", fontSize: 13 }}>
+                      Belum ada history bonus.
+                    </p>
                   ) : (
                     [...userData.bonusHistory]
-                      .sort((a, b) => (b.approvedAt || 0) - (a.approvedAt || 0))
-                      .map((item) => (
-                        <div
-                          key={item.id}
-                          style={{
-                            padding: "10px 0",
-                            borderBottom: "1px solid #1e293b",
-                          }}
-                        >
-                          <p style={{ margin: "4px 0" }}>
-                            <strong>Jumlah:</strong> {formatRp(item.amount)}
-                          </p>
-                          <p style={{ margin: "4px 0" }}>
-                            <strong>Status:</strong> {item.status}
-                          </p>
-                          <p style={{ margin: "4px 0" }}>
-                            <strong>Tanggal:</strong>{" "}
-                            {formatDateTime(item.approvedAt)}
-                          </p>
-                        </div>
-                      ))
+                      .sort(
+                        (a, b) => (b.approvedAt || 0) - (a.approvedAt || 0)
+                      )
+                      .map(renderHistoryItem)
                   )}
                 </div>
               </div>
             )}
-          </div>
-
-          <div style={panel}>
-            <h3 style={sectionTitle}>Notifikasi Customer</h3>
-            <div style={appBox}>
-              {!userData.notifCustomer ||
-              userData.notifCustomer.length === 0 ? (
-                <p style={{ margin: 0 }}>Belum ada notifikasi.</p>
-              ) : (
-                [...userData.notifCustomer]
-                  .sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0))
-                  .slice(0, 10)
-                  .map((n) => (
-                    <div
-                      key={n.id}
-                      style={{
-                        padding: "10px 0",
-                        borderBottom: "1px solid #1e293b",
-                      }}
-                    >
-                      <p style={{ margin: "4px 0", fontWeight: 700 }}>
-                        {n.read ? "✓ " : "🔴 "}
-                        {n.title}
-                      </p>
-                      <p style={{ margin: "4px 0" }}>{n.message}</p>
-                    </div>
-                  ))
-              )}
-            </div>
           </div>
         </div>
 
