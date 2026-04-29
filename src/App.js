@@ -809,6 +809,11 @@ Mohon diproses ya kak 🙏`;
         return;
       }
 
+      if (amount < 10000) {
+        alert("Minimal penarikan Rp10.000.");
+        return;
+      }
+
       if (amount > totalSaldo) {
         alert("Saldo komisi tidak cukup.");
         return;
@@ -1270,38 +1275,538 @@ Mohon diproses ya kak 🙏`;
 
   // ================= HOME =================
   if (page === "home") {
+    const features = [
+      {
+        icon: "💰",
+        title: "Komisi Cepat",
+        desc: "Dapatkan komisi instan setiap kali ada penjualan dari referral kamu.",
+      },
+      {
+        icon: "🎁",
+        title: "Bonus Referral",
+        desc: "Capai 10 referral dan dapatkan bonus tambahan Rp100.000.",
+      },
+      {
+        icon: "⚡",
+        title: "Penarikan Mudah",
+        desc: "Tarik saldo komisi mulai dari Rp10.000 langsung ke rekening kamu.",
+      },
+    ];
+
+    const steps = [
+      { n: "1", title: "Daftar Akun", desc: "Pilih paket dan lengkapi data diri kamu." },
+      { n: "2", title: "Bagikan Link", desc: "Sebarkan link referral kamu ke teman & sosial media." },
+      { n: "3", title: "Dapat Komisi", desc: "Komisi otomatis masuk setiap ada pendaftaran baru." },
+    ];
+
     return (
-      <div style={container}>
-        <div style={card}>
-          <h2 style={{ marginTop: 0, marginBottom: 8, textAlign: "center" }}>
-            PRISTORE
-          </h2>
-          <p
+      <div
+        style={{
+          minHeight: "100vh",
+          background: "#020617",
+          color: "white",
+          boxSizing: "border-box",
+          overflowX: "hidden",
+          position: "relative",
+        }}
+      >
+        {/* Decorative orbs */}
+        <div
+          style={{
+            position: "absolute",
+            top: -120,
+            right: -80,
+            width: 280,
+            height: 280,
+            borderRadius: "50%",
+            background:
+              "radial-gradient(circle,rgba(34,197,94,0.35),transparent 70%)",
+            filter: "blur(20px)",
+            pointerEvents: "none",
+          }}
+        />
+        <div
+          style={{
+            position: "absolute",
+            top: 200,
+            left: -120,
+            width: 320,
+            height: 320,
+            borderRadius: "50%",
+            background:
+              "radial-gradient(circle,rgba(14,165,233,0.25),transparent 70%)",
+            filter: "blur(20px)",
+            pointerEvents: "none",
+          }}
+        />
+
+        <div
+          style={{
+            position: "relative",
+            maxWidth: 480,
+            margin: "0 auto",
+            padding: "20px 18px 40px",
+          }}
+        >
+          {/* Navbar */}
+          <div
             style={{
-              marginTop: 0,
-              marginBottom: 16,
-              opacity: 0.85,
-              fontSize: 14,
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              marginBottom: 24,
+            }}
+          >
+            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+              <div
+                style={{
+                  width: 36,
+                  height: 36,
+                  borderRadius: 10,
+                  background: "linear-gradient(135deg,#22c55e,#0ea5e9)",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  fontWeight: 800,
+                  fontSize: 16,
+                }}
+              >
+                P
+              </div>
+              <span
+                style={{
+                  fontWeight: 800,
+                  fontSize: 16,
+                  letterSpacing: 1,
+                }}
+              >
+                PRISTORE
+              </span>
+            </div>
+            <button
+              onClick={() => setPage("login")}
+              style={{
+                background: "transparent",
+                border: "1px solid rgba(148,163,184,0.25)",
+                color: "#e2e8f0",
+                padding: "7px 14px",
+                borderRadius: 999,
+                fontWeight: 700,
+                fontSize: 12,
+                cursor: "pointer",
+              }}
+            >
+              Masuk
+            </button>
+          </div>
+
+          {/* Hero */}
+          <div style={{ textAlign: "center", marginBottom: 22 }}>
+            <span
+              style={{
+                display: "inline-block",
+                background: "rgba(34,197,94,0.12)",
+                border: "1px solid rgba(34,197,94,0.3)",
+                color: "#4ade80",
+                padding: "5px 12px",
+                borderRadius: 999,
+                fontSize: 11,
+                fontWeight: 700,
+                marginBottom: 14,
+              }}
+            >
+              ✨ Platform Referral #1 Indonesia
+            </span>
+            <h1
+              style={{
+                margin: 0,
+                fontSize: 30,
+                fontWeight: 800,
+                lineHeight: 1.15,
+                letterSpacing: -0.5,
+              }}
+            >
+              Bangun Penghasilan{" "}
+              <span
+                style={{
+                  background:
+                    "linear-gradient(90deg,#22c55e,#0ea5e9)",
+                  WebkitBackgroundClip: "text",
+                  WebkitTextFillColor: "transparent",
+                  backgroundClip: "text",
+                }}
+              >
+                Pasif
+              </span>{" "}
+              Bersama Pristore
+            </h1>
+            <p
+              style={{
+                margin: "12px 8px 0",
+                color: "#cbd5e1",
+                fontSize: 14,
+                lineHeight: 1.55,
+              }}
+            >
+              Dapatkan komisi & bonus referral cepat. Bagikan link, undang
+              teman, dan tarik saldo kapan saja ke rekening bank kamu.
+            </p>
+          </div>
+
+          {/* Hero banner image */}
+          <div
+            style={{
+              position: "relative",
+              borderRadius: 22,
+              overflow: "hidden",
+              marginBottom: 22,
+              border: "1px solid rgba(148,163,184,0.15)",
+              boxShadow:
+                "0 20px 50px rgba(0,0,0,0.45), 0 0 0 1px rgba(34,197,94,0.08)",
+            }}
+          >
+            <img
+              src="https://images.unsplash.com/photo-1556742111-a301076d9d18?auto=format&fit=crop&w=900&q=80"
+              alt="Pristore"
+              style={{
+                width: "100%",
+                height: 200,
+                objectFit: "cover",
+                display: "block",
+              }}
+              onError={(e) => {
+                e.currentTarget.style.display = "none";
+              }}
+            />
+            <div
+              style={{
+                position: "absolute",
+                inset: 0,
+                background:
+                  "linear-gradient(180deg,rgba(2,6,23,0.1) 40%,rgba(2,6,23,0.95))",
+              }}
+            />
+            <div
+              style={{
+                position: "absolute",
+                bottom: 14,
+                left: 14,
+                right: 14,
+                display: "flex",
+                gap: 8,
+              }}
+            >
+              <div
+                style={{
+                  background: "rgba(15,23,42,0.7)",
+                  backdropFilter: "blur(8px)",
+                  border: "1px solid rgba(148,163,184,0.18)",
+                  borderRadius: 12,
+                  padding: "8px 12px",
+                  flex: 1,
+                }}
+              >
+                <p
+                  style={{
+                    margin: 0,
+                    fontSize: 10,
+                    color: "#94a3b8",
+                    textTransform: "uppercase",
+                    letterSpacing: 0.5,
+                    fontWeight: 700,
+                  }}
+                >
+                  Komisi
+                </p>
+                <p
+                  style={{
+                    margin: "2px 0 0 0",
+                    fontSize: 14,
+                    fontWeight: 800,
+                    color: "#4ade80",
+                  }}
+                >
+                  Cepat & Aman
+                </p>
+              </div>
+              <div
+                style={{
+                  background: "rgba(15,23,42,0.7)",
+                  backdropFilter: "blur(8px)",
+                  border: "1px solid rgba(148,163,184,0.18)",
+                  borderRadius: 12,
+                  padding: "8px 12px",
+                  flex: 1,
+                }}
+              >
+                <p
+                  style={{
+                    margin: 0,
+                    fontSize: 10,
+                    color: "#94a3b8",
+                    textTransform: "uppercase",
+                    letterSpacing: 0.5,
+                    fontWeight: 700,
+                  }}
+                >
+                  Bonus
+                </p>
+                <p
+                  style={{
+                    margin: "2px 0 0 0",
+                    fontSize: 14,
+                    fontWeight: 800,
+                    color: "#38bdf8",
+                  }}
+                >
+                  Hingga 100rb
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* CTAs */}
+          <div style={{ display: "grid", gap: 10, marginBottom: 26 }}>
+            <button
+              onClick={() => setPage("register")}
+              style={{
+                width: "100%",
+                padding: "14px 16px",
+                borderRadius: 14,
+                border: "none",
+                background:
+                  "linear-gradient(90deg,#22c55e,#16a34a)",
+                color: "white",
+                fontWeight: 800,
+                fontSize: 15,
+                cursor: "pointer",
+                boxShadow: "0 10px 25px rgba(34,197,94,0.35)",
+              }}
+            >
+              Daftar Sekarang →
+            </button>
+            <button
+              onClick={() => window.open(SAMPLE_VIDEO_LINK, "_blank")}
+              style={{
+                width: "100%",
+                padding: "13px 16px",
+                borderRadius: 14,
+                border: "1px solid rgba(148,163,184,0.25)",
+                background: "rgba(30,41,59,0.6)",
+                color: "white",
+                fontWeight: 700,
+                fontSize: 14,
+                cursor: "pointer",
+              }}
+            >
+              ▶  Tonton Video Penjelasan
+            </button>
+          </div>
+
+          {/* Features */}
+          <h3
+            style={{
+              margin: "0 0 12px 0",
+              fontSize: 11,
+              fontWeight: 800,
+              color: "#94a3b8",
+              letterSpacing: 1,
+              textTransform: "uppercase",
               textAlign: "center",
             }}
           >
-            Login atau daftar untuk masuk ke dashboard.
-          </p>
+            Kenapa Pristore?
+          </h3>
+          <div style={{ display: "grid", gap: 10, marginBottom: 26 }}>
+            {features.map((f, i) => (
+              <div
+                key={i}
+                style={{
+                  background:
+                    "linear-gradient(135deg,rgba(30,41,59,0.85),rgba(15,23,42,0.85))",
+                  border: "1px solid rgba(148,163,184,0.12)",
+                  borderRadius: 16,
+                  padding: 14,
+                  display: "flex",
+                  gap: 12,
+                  alignItems: "flex-start",
+                }}
+              >
+                <div
+                  style={{
+                    width: 42,
+                    height: 42,
+                    borderRadius: 12,
+                    background: "rgba(34,197,94,0.12)",
+                    border: "1px solid rgba(34,197,94,0.2)",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    fontSize: 20,
+                    flexShrink: 0,
+                  }}
+                >
+                  {f.icon}
+                </div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <p
+                    style={{
+                      margin: 0,
+                      fontWeight: 700,
+                      fontSize: 14,
+                    }}
+                  >
+                    {f.title}
+                  </p>
+                  <p
+                    style={{
+                      margin: "3px 0 0 0",
+                      fontSize: 12,
+                      color: "#94a3b8",
+                      lineHeight: 1.5,
+                    }}
+                  >
+                    {f.desc}
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
 
-          <button
-            style={btnOrange}
-            onClick={() => window.open(SAMPLE_VIDEO_LINK, "_blank")}
+          {/* How it works */}
+          <h3
+            style={{
+              margin: "0 0 12px 0",
+              fontSize: 11,
+              fontWeight: 800,
+              color: "#94a3b8",
+              letterSpacing: 1,
+              textTransform: "uppercase",
+              textAlign: "center",
+            }}
           >
-            🎥 Sample Video
-          </button>
+            Cara Kerja
+          </h3>
+          <div
+            style={{
+              background:
+                "linear-gradient(135deg,rgba(30,41,59,0.85),rgba(15,23,42,0.85))",
+              border: "1px solid rgba(148,163,184,0.12)",
+              borderRadius: 16,
+              padding: 16,
+              marginBottom: 26,
+            }}
+          >
+            {steps.map((s, i) => (
+              <div
+                key={i}
+                style={{
+                  display: "flex",
+                  gap: 12,
+                  alignItems: "flex-start",
+                  paddingBottom: i < steps.length - 1 ? 14 : 0,
+                  marginBottom: i < steps.length - 1 ? 14 : 0,
+                  borderBottom:
+                    i < steps.length - 1
+                      ? "1px solid rgba(148,163,184,0.1)"
+                      : "none",
+                }}
+              >
+                <div
+                  style={{
+                    width: 32,
+                    height: 32,
+                    borderRadius: "50%",
+                    background:
+                      "linear-gradient(135deg,#22c55e,#0ea5e9)",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    fontWeight: 800,
+                    fontSize: 13,
+                    flexShrink: 0,
+                  }}
+                >
+                  {s.n}
+                </div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <p style={{ margin: 0, fontWeight: 700, fontSize: 13 }}>
+                    {s.title}
+                  </p>
+                  <p
+                    style={{
+                      margin: "3px 0 0 0",
+                      fontSize: 12,
+                      color: "#94a3b8",
+                      lineHeight: 1.5,
+                    }}
+                  >
+                    {s.desc}
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
 
-          <button style={btn} onClick={() => setPage("login")}>
-            Login
-          </button>
+          {/* Final CTA */}
+          <div
+            style={{
+              background:
+                "linear-gradient(135deg,#16a34a,#0d9488)",
+              borderRadius: 18,
+              padding: 20,
+              textAlign: "center",
+              boxShadow: "0 20px 40px rgba(22,163,74,0.3)",
+              marginBottom: 18,
+            }}
+          >
+            <p
+              style={{
+                margin: 0,
+                fontSize: 16,
+                fontWeight: 800,
+              }}
+            >
+              Siap mulai cuan hari ini?
+            </p>
+            <p
+              style={{
+                margin: "6px 0 14px 0",
+                fontSize: 12,
+                opacity: 0.9,
+              }}
+            >
+              Gratis daftar, cukup pilih paket sesuai kebutuhanmu.
+            </p>
+            <button
+              onClick={() => setPage("register")}
+              style={{
+                background: "white",
+                color: "#0f172a",
+                border: "none",
+                padding: "12px 24px",
+                borderRadius: 12,
+                fontWeight: 800,
+                fontSize: 14,
+                cursor: "pointer",
+                width: "100%",
+              }}
+            >
+              Buat Akun Sekarang
+            </button>
+          </div>
 
-          <button style={btnDark} onClick={() => setPage("register")}>
-            Daftar
-          </button>
+          {/* Footer */}
+          <p
+            style={{
+              margin: 0,
+              textAlign: "center",
+              fontSize: 11,
+              color: "#64748b",
+            }}
+          >
+            © {new Date().getFullYear()} PRISTORE. Semua hak dilindungi.
+          </p>
         </div>
       </div>
     );
@@ -3010,6 +3515,15 @@ Mohon diproses ya kak 🙏`;
                 setWithdrawAmount(digits);
               }}
             />
+            <p
+              style={{
+                margin: "-4px 0 8px 0",
+                fontSize: 11,
+                color: "#94a3b8",
+              }}
+            >
+              Minimal penarikan Rp10.000
+            </p>
             <button style={btnGold} onClick={submitWithdraw}>
               Tarik Saldo
             </button>
