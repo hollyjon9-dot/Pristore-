@@ -143,6 +143,7 @@ export default function App() {
   const [withdrawAmount, setWithdrawAmount] = useState("");
   const [showHistory, setShowHistory] = useState(false);
   const [showUpgradeOptions, setShowUpgradeOptions] = useState(false);
+  const [showProfile, setShowProfile] = useState(false);
   const [resetInfo, setResetInfo] = useState("");
 
   // ================= ADMIN STATE =================
@@ -2677,18 +2678,44 @@ Mohon diproses ya kak 🙏`;
               <p style={{ margin: 0, fontSize: 11, color: "#94a3b8" }}>
                 Selamat datang
               </p>
-              <p
+              <div
                 style={{
-                  margin: 0,
-                  fontSize: 14,
-                  fontWeight: 700,
-                  whiteSpace: "nowrap",
-                  overflow: "hidden",
-                  textOverflow: "ellipsis",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 8,
+                  minWidth: 0,
                 }}
               >
-                {userData.namaLengkap}
-              </p>
+                <p
+                  style={{
+                    margin: 0,
+                    fontSize: 14,
+                    fontWeight: 700,
+                    whiteSpace: "nowrap",
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                    minWidth: 0,
+                  }}
+                >
+                  {userData.namaLengkap}
+                </p>
+                <button
+                  onClick={() => setShowProfile(true)}
+                  style={{
+                    background: "rgba(34,197,94,0.15)",
+                    border: "1px solid rgba(34,197,94,0.4)",
+                    color: "#4ade80",
+                    padding: "3px 10px",
+                    borderRadius: 999,
+                    cursor: "pointer",
+                    fontWeight: 700,
+                    fontSize: 11,
+                    flexShrink: 0,
+                  }}
+                >
+                  Profil
+                </button>
+              </div>
             </div>
             <span
               style={{
@@ -2881,39 +2908,6 @@ Mohon diproses ya kak 🙏`;
             </div>
           </div>
 
-          {/* Profil */}
-          <div style={surface}>
-            <h3 style={sectionLabel}>Profil</h3>
-            <div style={subtle}>
-              <div style={rowBase}>
-                <span style={labelText}>Nama</span>
-                <span style={valueText}>{userData.namaLengkap}</span>
-              </div>
-              <div style={rowBase}>
-                <span style={labelText}>Email</span>
-                <span style={valueText}>{userData.email}</span>
-              </div>
-              <div style={rowBase}>
-                <span style={labelText}>No HP</span>
-                <span style={valueText}>{userData.noHp}</span>
-              </div>
-              <div style={rowBase}>
-                <span style={labelText}>Bank / Rekening</span>
-                <span style={valueText}>{userData.bankNomorRekening}</span>
-              </div>
-              <div style={rowBase}>
-                <span style={labelText}>Paket</span>
-                <span style={valueText}>{userData.paket}</span>
-              </div>
-              <div style={rowLast}>
-                <span style={labelText}>Status</span>
-                <span style={{ ...valueText, color: sb.color }}>
-                  {sb.label}
-                </span>
-              </div>
-            </div>
-          </div>
-
           {/* Referral */}
           <div style={surface}>
             <h3 style={sectionLabel}>Referral</h3>
@@ -3005,8 +2999,16 @@ Mohon diproses ya kak 🙏`;
             <input
               style={input}
               placeholder="Jumlah yang akan ditarik"
-              value={withdrawAmount}
-              onChange={(e) => setWithdrawAmount(e.target.value)}
+              inputMode="numeric"
+              value={
+                withdrawAmount
+                  ? Number(withdrawAmount).toLocaleString("id-ID")
+                  : ""
+              }
+              onChange={(e) => {
+                const digits = e.target.value.replace(/\D/g, "");
+                setWithdrawAmount(digits);
+              }}
             />
             <button style={btnGold} onClick={submitWithdraw}>
               Tarik Saldo
@@ -3246,6 +3248,183 @@ Mohon diproses ya kak 🙏`;
             )}
           </div>
         </div>
+
+        {/* Profil Modal */}
+        {showProfile && (
+          <div
+            onClick={() => setShowProfile(false)}
+            style={{
+              position: "fixed",
+              inset: 0,
+              background: "rgba(2,6,23,0.7)",
+              backdropFilter: "blur(4px)",
+              zIndex: 1000,
+              display: "flex",
+              alignItems: "flex-end",
+              justifyContent: "center",
+              padding: 16,
+            }}
+          >
+            <div
+              onClick={(e) => e.stopPropagation()}
+              style={{
+                width: "100%",
+                maxWidth: 480,
+                background: "#0f172a",
+                border: "1px solid rgba(148,163,184,0.15)",
+                borderRadius: 18,
+                padding: 18,
+                color: "white",
+                boxShadow: "0 -10px 40px rgba(0,0,0,0.5)",
+                maxHeight: "85vh",
+                overflowY: "auto",
+              }}
+            >
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  marginBottom: 14,
+                }}
+              >
+                <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700 }}>
+                  Profil Saya
+                </h3>
+                <button
+                  onClick={() => setShowProfile(false)}
+                  style={{
+                    background: "transparent",
+                    border: "1px solid rgba(148,163,184,0.2)",
+                    color: "#cbd5e1",
+                    width: 30,
+                    height: 30,
+                    borderRadius: 999,
+                    cursor: "pointer",
+                    fontWeight: 700,
+                    fontSize: 14,
+                    lineHeight: 1,
+                  }}
+                >
+                  ×
+                </button>
+              </div>
+
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 12,
+                  padding: "12px 0",
+                  borderBottom: "1px solid rgba(148,163,184,0.1)",
+                  marginBottom: 8,
+                }}
+              >
+                <div
+                  style={{
+                    width: 56,
+                    height: 56,
+                    borderRadius: "50%",
+                    background:
+                      "linear-gradient(135deg,#22c55e,#0ea5e9)",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    fontWeight: 800,
+                    fontSize: 22,
+                    flexShrink: 0,
+                  }}
+                >
+                  {(userData.namaLengkap || "U")
+                    .trim()
+                    .charAt(0)
+                    .toUpperCase()}
+                </div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <p
+                    style={{
+                      margin: 0,
+                      fontSize: 15,
+                      fontWeight: 700,
+                    }}
+                  >
+                    {userData.namaLengkap}
+                  </p>
+                  <p
+                    style={{
+                      margin: "2px 0 0 0",
+                      fontSize: 12,
+                      color: "#94a3b8",
+                    }}
+                  >
+                    {userData.email}
+                  </p>
+                </div>
+                <span
+                  style={{
+                    background: sb.bg,
+                    color: sb.color,
+                    fontSize: 11,
+                    fontWeight: 700,
+                    padding: "4px 10px",
+                    borderRadius: 999,
+                  }}
+                >
+                  {sb.label}
+                </span>
+              </div>
+
+              <div style={subtle}>
+                <div style={rowBase}>
+                  <span style={labelText}>Nama</span>
+                  <span style={valueText}>{userData.namaLengkap}</span>
+                </div>
+                <div style={rowBase}>
+                  <span style={labelText}>Email</span>
+                  <span style={valueText}>{userData.email}</span>
+                </div>
+                <div style={rowBase}>
+                  <span style={labelText}>No HP</span>
+                  <span style={valueText}>{userData.noHp}</span>
+                </div>
+                <div style={rowBase}>
+                  <span style={labelText}>Bank / Rekening</span>
+                  <span style={valueText}>
+                    {userData.bankNomorRekening}
+                  </span>
+                </div>
+                <div style={rowBase}>
+                  <span style={labelText}>Paket</span>
+                  <span style={valueText}>{userData.paket}</span>
+                </div>
+                <div style={rowLast}>
+                  <span style={labelText}>Status</span>
+                  <span style={{ ...valueText, color: sb.color }}>
+                    {sb.label}
+                  </span>
+                </div>
+              </div>
+
+              <button
+                onClick={() => setShowProfile(false)}
+                style={{
+                  marginTop: 14,
+                  width: "100%",
+                  background: "rgba(148,163,184,0.1)",
+                  border: "1px solid rgba(148,163,184,0.2)",
+                  color: "#e2e8f0",
+                  padding: "12px 14px",
+                  borderRadius: 12,
+                  fontWeight: 700,
+                  fontSize: 13,
+                  cursor: "pointer",
+                }}
+              >
+                Tutup
+              </button>
+            </div>
+          </div>
+        )}
 
         <a
           href={`${WA_ADMIN}?text=${encodeURIComponent(
