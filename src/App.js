@@ -1482,24 +1482,138 @@ Mohon diproses ya kak 🙏`;
 
   // ================= ADMIN =================
   if (page === "admin") {
+    const lightInput = {
+      width: "100%",
+      padding: "10px 12px",
+      borderRadius: 10,
+      border: "1px solid #cbd5e1",
+      background: "white",
+      color: "#0f172a",
+      fontSize: 13,
+      boxSizing: "border-box",
+      outline: "none",
+    };
+
+    const ghostBtn = {
+      background: "white",
+      color: "#0f172a",
+      border: "1px solid #cbd5e1",
+      borderRadius: 10,
+      padding: "8px 12px",
+      fontWeight: 600,
+      fontSize: 12,
+      cursor: "pointer",
+    };
+
+    const dangerGhostBtn = {
+      ...ghostBtn,
+      color: "#b91c1c",
+      borderColor: "#fecaca",
+      background: "#fef2f2",
+    };
+
+    const tabBtn = (active) => ({
+      background: active ? "#0f172a" : "white",
+      color: active ? "white" : "#0f172a",
+      border: "1px solid",
+      borderColor: active ? "#0f172a" : "#cbd5e1",
+      borderRadius: 999,
+      padding: "8px 14px",
+      fontWeight: 600,
+      fontSize: 13,
+      cursor: "pointer",
+    });
+
+    const dataHeader = {
+      display: "flex",
+      justifyContent: "space-between",
+      alignItems: "center",
+      gap: 8,
+      marginBottom: 8,
+    };
+
+    const dataName = {
+      margin: 0,
+      fontWeight: 700,
+      fontSize: 14,
+      color: "#0f172a",
+    };
+
+    const renderNotifCard = (n, accentColor) => (
+      <DataCard key={n.id}>
+        <div style={{ display: "flex", gap: 10, alignItems: "flex-start" }}>
+          <input
+            type="checkbox"
+            checked={selectedAdminNotifIds.includes(n.id)}
+            onChange={() => toggleSelectNotif(n.id)}
+            style={{ marginTop: 4 }}
+          />
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={dataHeader}>
+              <p style={dataName}>{n.title}</p>
+              <span
+                style={{
+                  fontSize: 11,
+                  fontWeight: 700,
+                  padding: "3px 8px",
+                  borderRadius: 999,
+                  background: n.read ? "#e2e8f0" : "#fee2e2",
+                  color: n.read ? "#475569" : accentColor,
+                }}
+              >
+                {n.read ? "Sudah dibaca" : "Belum dibaca"}
+              </span>
+            </div>
+            <p
+              style={{
+                margin: "0 0 10px 0",
+                fontSize: 13,
+                color: "#475569",
+              }}
+            >
+              {n.message}
+            </p>
+            <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+              {!n.read && (
+                <ActionButton
+                  color="#16a34a"
+                  onClick={() => markAdminNotifRead(n.id)}
+                >
+                  Tandai Dibaca
+                </ActionButton>
+              )}
+              <ActionButton
+                color="#dc2626"
+                onClick={() => deleteAdminNotif(n.id)}
+              >
+                Hapus
+              </ActionButton>
+            </div>
+          </div>
+        </div>
+      </DataCard>
+    );
+
     return (
       <div
         style={{
           minHeight: "100vh",
-          background: "linear-gradient(180deg,#f8fafc,#e2e8f0)",
+          background: "#f1f5f9",
           padding: 16,
-          color: "#111827",
+          color: "#0f172a",
           boxSizing: "border-box",
         }}
       >
         <div style={{ maxWidth: 1200, margin: "0 auto" }}>
+          {/* Header */}
           <div
             style={{
               background: "white",
-              borderRadius: 18,
+              borderRadius: 16,
               padding: 18,
-              marginBottom: 18,
-              boxShadow: "0 12px 30px rgba(15,23,42,0.08)",
+              marginBottom: 14,
+              border: "1px solid #e2e8f0",
+              boxShadow: "0 1px 2px rgba(15,23,42,0.04)",
               display: "flex",
               justifyContent: "space-between",
               alignItems: "center",
@@ -1507,104 +1621,197 @@ Mohon diproses ya kak 🙏`;
               flexWrap: "wrap",
             }}
           >
-            <div>
-              <h1 style={{ margin: 0, fontSize: 24 }}>Admin Dashboard</h1>
-              <p style={{ margin: "6px 0 0 0", color: "#475569" }}>
-                Kelola pendaftaran, update paket, komisi, bonus, penarikan, dan
-                semua user.
-              </p>
+            <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+              <div
+                style={{
+                  width: 42,
+                  height: 42,
+                  borderRadius: 12,
+                  background: "linear-gradient(135deg,#0f172a,#334155)",
+                  color: "white",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  fontWeight: 800,
+                  fontSize: 18,
+                  flexShrink: 0,
+                }}
+              >
+                A
+              </div>
+              <div>
+                <h1
+                  style={{
+                    margin: 0,
+                    fontSize: 18,
+                    fontWeight: 800,
+                    color: "#0f172a",
+                  }}
+                >
+                  Admin Dashboard
+                </h1>
+                <p
+                  style={{
+                    margin: "2px 0 0 0",
+                    color: "#64748b",
+                    fontSize: 12,
+                  }}
+                >
+                  Kelola pendaftaran, paket, komisi, bonus, penarikan & user.
+                </p>
+              </div>
             </div>
 
             <button
               onClick={handleLogout}
               style={{
-                background: "#0f172a",
-                color: "white",
-                border: "none",
-                borderRadius: 12,
-                padding: "12px 16px",
-                fontWeight: 700,
+                background: "white",
+                color: "#0f172a",
+                border: "1px solid #cbd5e1",
+                borderRadius: 10,
+                padding: "9px 14px",
+                fontWeight: 600,
+                fontSize: 13,
                 cursor: "pointer",
               }}
             >
-              Logout
+              Keluar
             </button>
           </div>
 
+          {/* Stats grid */}
           <div
             style={{
               display: "grid",
-              gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
-              gap: 16,
-              marginBottom: 18,
+              gridTemplateColumns: "repeat(auto-fit, minmax(170px, 1fr))",
+              gap: 12,
+              marginBottom: 14,
             }}
           >
-            <StatCard title="🔔 Notifikasi" value={totalNotif} />
-            <StatCard title="🔴 Belum Dibaca" value={adminUnreadCount} />
-            <StatCard title="👥 Total User" value={usersAdmin.length} />
+            <StatCard title="Notifikasi" value={totalNotif} />
             <StatCard
-              title="💰 Total Komisi"
+              title="Belum Dibaca"
+              value={adminUnreadCount}
+              accent="#dc2626"
+            />
+            <StatCard title="Total User" value={usersAdmin.length} />
+            <StatCard
+              title="Total Komisi"
               value={formatRp(totalKomisiTerbentuk)}
+              accent="#16a34a"
             />
-            <StatCard title="📦 Order Hari Ini" value={ordersToday.length} />
+            <StatCard title="Order Hari Ini" value={ordersToday.length} />
             <StatCard
-              title="✅ Approve Hari Ini"
+              title="Approve Hari Ini"
               value={approvedToday.length}
+              accent="#16a34a"
             />
             <StatCard
-              title="📅 Approve Tanggal Dipilih"
+              title="Approve Tgl Dipilih"
               value={approvedBySelectedDate.length}
             />
           </div>
 
-          <SectionCard title="📊 Ringkasan Order">
+          {/* Ringkasan Order */}
+          <SectionCard
+            title="Ringkasan Order"
+            right={
+              <input
+                type="date"
+                value={selectedDate}
+                onChange={(e) => setSelectedDate(e.target.value)}
+                style={{ ...lightInput, width: "auto", padding: "8px 12px" }}
+              />
+            }
+          >
             <div
               style={{
                 display: "grid",
-                gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
-                gap: 12,
+                gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
+                gap: 10,
+                marginBottom: 18,
               }}
             >
-              <div style={statMini}>
-                <p style={{ margin: 0, opacity: 0.8 }}>Tanggal Filter</p>
-                <input
-                  type="date"
-                  value={selectedDate}
-                  onChange={(e) => setSelectedDate(e.target.value)}
+              <div
+                style={{
+                  background: "#f8fafc",
+                  border: "1px solid #e2e8f0",
+                  borderRadius: 12,
+                  padding: 14,
+                }}
+              >
+                <p
                   style={{
-                    width: "100%",
-                    marginTop: 10,
-                    padding: 12,
-                    borderRadius: 10,
-                    border: "1px solid #334155",
-                    background: "#020617",
-                    color: "white",
-                    boxSizing: "border-box",
+                    margin: 0,
+                    fontSize: 11,
+                    fontWeight: 700,
+                    color: "#64748b",
+                    letterSpacing: 0.4,
+                    textTransform: "uppercase",
                   }}
-                />
-              </div>
-
-              <div style={statMini}>
-                <p style={{ margin: 0, opacity: 0.8 }}>
-                  Order pada tanggal ini
+                >
+                  Order Tanggal Ini
                 </p>
-                <h2 style={{ margin: "8px 0 0 0" }}>{ordersByDate.length}</h2>
-              </div>
-
-              <div style={statMini}>
-                <p style={{ margin: 0, opacity: 0.8 }}>
-                  Approve pada tanggal ini
+                <p
+                  style={{
+                    margin: "6px 0 0 0",
+                    fontSize: 22,
+                    fontWeight: 800,
+                  }}
+                >
+                  {ordersByDate.length}
                 </p>
-                <h2 style={{ margin: "8px 0 0 0" }}>
+              </div>
+              <div
+                style={{
+                  background: "#f8fafc",
+                  border: "1px solid #e2e8f0",
+                  borderRadius: 12,
+                  padding: 14,
+                }}
+              >
+                <p
+                  style={{
+                    margin: 0,
+                    fontSize: 11,
+                    fontWeight: 700,
+                    color: "#64748b",
+                    letterSpacing: 0.4,
+                    textTransform: "uppercase",
+                  }}
+                >
+                  Approve Tanggal Ini
+                </p>
+                <p
+                  style={{
+                    margin: "6px 0 0 0",
+                    fontSize: 22,
+                    fontWeight: 800,
+                    color: "#16a34a",
+                  }}
+                >
                   {approvedBySelectedDate.length}
-                </h2>
+                </p>
               </div>
             </div>
 
-            <div style={{ marginTop: 18 }}>
-              <h3 style={{ marginTop: 0 }}>📈 Grafik Order</h3>
+            <div style={{ marginBottom: 18 }}>
+              <h3
+                style={{
+                  margin: "0 0 10px 0",
+                  fontSize: 13,
+                  fontWeight: 700,
+                  color: "#64748b",
+                  letterSpacing: 0.4,
+                  textTransform: "uppercase",
+                }}
+              >
+                Grafik Order
+              </h3>
               {chartData.length === 0 ? (
-                <p>Belum ada data order.</p>
+                <p style={{ margin: 0, color: "#94a3b8", fontSize: 13 }}>
+                  Belum ada data order.
+                </p>
               ) : (
                 chartData.map((d, i) => (
                   <div
@@ -1612,29 +1819,45 @@ Mohon diproses ya kak 🙏`;
                     style={{
                       display: "flex",
                       alignItems: "center",
-                      gap: 8,
+                      gap: 10,
                       marginBottom: 8,
                     }}
                   >
-                    <div style={{ width: 90, fontSize: 12 }}>{d.date}</div>
+                    <div
+                      style={{
+                        width: 90,
+                        fontSize: 12,
+                        color: "#64748b",
+                      }}
+                    >
+                      {d.date}
+                    </div>
                     <div
                       style={{
                         flex: 1,
                         background: "#e2e8f0",
                         borderRadius: 999,
                         overflow: "hidden",
-                        height: 10,
+                        height: 8,
                       }}
                     >
                       <div
                         style={{
                           width: `${Math.max(8, d.total * 12)}px`,
-                          height: 10,
-                          background: "#22c55e",
+                          height: 8,
+                          background:
+                            "linear-gradient(90deg,#22c55e,#16a34a)",
                         }}
                       />
                     </div>
-                    <div style={{ minWidth: 24, fontWeight: 700 }}>
+                    <div
+                      style={{
+                        minWidth: 24,
+                        fontWeight: 700,
+                        fontSize: 13,
+                        textAlign: "right",
+                      }}
+                    >
                       {d.total}
                     </div>
                   </div>
@@ -1642,651 +1865,651 @@ Mohon diproses ya kak 🙏`;
               )}
             </div>
 
-            <div style={{ marginTop: 18 }}>
-              <h3 style={{ marginTop: 0 }}>📋 Riwayat Order</h3>
+            <div>
+              <h3
+                style={{
+                  margin: "0 0 10px 0",
+                  fontSize: 13,
+                  fontWeight: 700,
+                  color: "#64748b",
+                  letterSpacing: 0.4,
+                  textTransform: "uppercase",
+                }}
+              >
+                Riwayat Order
+              </h3>
               {ordersByDate.length === 0 ? (
-                <p>Tidak ada order pada tanggal ini.</p>
+                <p style={{ margin: 0, color: "#94a3b8", fontSize: 13 }}>
+                  Tidak ada order pada tanggal ini.
+                </p>
               ) : (
                 ordersByDate.map((u) => (
                   <DataCard key={u.id}>
-                    <p style={{ margin: "0 0 6px 0", fontWeight: 700 }}>
-                      {u.namaLengkap}
-                    </p>
-                    <p style={{ margin: "4px 0" }}>Email: {u.email}</p>
-                    <p style={{ margin: "4px 0" }}>Paket: {u.paket}</p>
-                    <p style={{ margin: "4px 0" }}>
-                      Tanggal Order: {formatDateTime(u.registrationCreatedAt)}
-                    </p>
-                    <p style={{ margin: "4px 0" }}>
-                      Tanggal Approve: {formatDateTime(u.approvedAt)}
-                    </p>
-                    <p style={{ margin: "4px 0" }}>Status: {u.status}</p>
+                    <div style={dataHeader}>
+                      <p style={dataName}>{u.namaLengkap}</p>
+                      <StatusBadge status={u.status} />
+                    </div>
+                    <InfoRow label="Email" value={u.email} />
+                    <InfoRow label="Paket" value={u.paket} />
+                    <InfoRow
+                      label="Tgl Order"
+                      value={formatDateTime(u.registrationCreatedAt)}
+                    />
+                    <InfoRow
+                      label="Tgl Approve"
+                      value={formatDateTime(u.approvedAt)}
+                    />
                   </DataCard>
                 ))
               )}
             </div>
           </SectionCard>
 
-          <div style={{ display: "grid", gap: 12 }}>
+          {/* Collapsible sections */}
+          <div style={{ display: "grid", gap: 10 }}>
+            {/* Notifikasi Admin */}
             <div>
-              <div
-                style={adminToggle}
+              <AdminToggle
+                label="Notifikasi Admin"
+                badge={adminUnreadCount}
+                isOpen={openSection === "notif"}
                 onClick={() =>
                   setOpenSection(openSection === "notif" ? null : "notif")
                 }
-              >
-                🔔 Notifikasi Admin
-                {adminUnreadCount > 0 ? ` (${adminUnreadCount})` : ""}
-              </div>
+              />
               {openSection === "notif" && (
-                <SectionCard title="🔔 Notifikasi Admin">
-                  <div style={{ marginBottom: 16 }}>
-                    <button
-                      onClick={() =>
-                        setSelectedAdminNotifIds(adminFeed.map((n) => n.id))
-                      }
-                    >
-                      Pilih Semua
-                    </button>
-
-                    <button onClick={deleteSelectedNotif}>Hapus Dipilih</button>
-
-                    <button onClick={deleteAllAdminNotif}>Hapus Semua</button>
-                  </div>
-                  <div
-                    style={{
-                      display: "flex",
-                      gap: 10,
-                      flexWrap: "wrap",
-                      marginBottom: 16,
-                    }}
-                  >
-                    <button
+                <div style={{ marginTop: 10 }}>
+                  <SectionCard title="Notifikasi Admin">
+                    <div
                       style={{
-                        background:
-                          openNotifGroup === "daftar" ? "#0f172a" : "#cbd5e1",
-                        color:
-                          openNotifGroup === "daftar" ? "white" : "#0f172a",
-                        border: "none",
-                        borderRadius: 10,
-                        padding: "10px 14px",
-                        fontWeight: 700,
-                        cursor: "pointer",
+                        display: "flex",
+                        gap: 8,
+                        flexWrap: "wrap",
+                        marginBottom: 14,
                       }}
-                      onClick={() => setOpenNotifGroup("daftar")}
                     >
-                      📥 Pendaftaran & Upgrade
-                    </button>
+                      <button
+                        style={ghostBtn}
+                        onClick={() =>
+                          setSelectedAdminNotifIds(
+                            adminFeed.map((n) => n.id)
+                          )
+                        }
+                      >
+                        Pilih Semua
+                      </button>
+                      <button
+                        style={dangerGhostBtn}
+                        onClick={deleteSelectedNotif}
+                      >
+                        Hapus Dipilih
+                      </button>
+                      <button
+                        style={dangerGhostBtn}
+                        onClick={deleteAllAdminNotif}
+                      >
+                        Hapus Semua
+                      </button>
+                    </div>
 
-                    <button
+                    <div
                       style={{
-                        background:
-                          openNotifGroup === "bayar" ? "#0f172a" : "#cbd5e1",
-                        color: openNotifGroup === "bayar" ? "white" : "#0f172a",
-                        border: "none",
-                        borderRadius: 10,
-                        padding: "10px 14px",
-                        fontWeight: 700,
-                        cursor: "pointer",
+                        display: "flex",
+                        gap: 8,
+                        flexWrap: "wrap",
+                        marginBottom: 14,
                       }}
-                      onClick={() => setOpenNotifGroup("bayar")}
                     >
-                      💰 Pembayaran, Bonus & Penarikan
-                    </button>
-                  </div>
+                      <button
+                        style={tabBtn(openNotifGroup === "daftar")}
+                        onClick={() => setOpenNotifGroup("daftar")}
+                      >
+                        Pendaftaran & Upgrade
+                      </button>
+                      <button
+                        style={tabBtn(openNotifGroup === "bayar")}
+                        onClick={() => setOpenNotifGroup("bayar")}
+                      >
+                        Pembayaran, Bonus & Penarikan
+                      </button>
+                    </div>
 
-                  {openNotifGroup === "daftar" && (
-                    <>
-                      {notifDaftarUpgrade.length === 0 ? (
-                        <p>Tidak ada notifikasi.</p>
+                    {openNotifGroup === "daftar" &&
+                      (notifDaftarUpgrade.length === 0 ? (
+                        <p
+                          style={{
+                            margin: 0,
+                            color: "#94a3b8",
+                            fontSize: 13,
+                          }}
+                        >
+                          Tidak ada notifikasi.
+                        </p>
                       ) : (
-                        notifDaftarUpgrade.slice(0, 30).map((n) => (
-                          <DataCard key={n.id}>
-                            <input
-                              type="checkbox"
-                              checked={selectedAdminNotifIds.includes(n.id)}
-                              onChange={() => toggleSelectNotif(n.id)}
-                            />
+                        notifDaftarUpgrade
+                          .slice(0, 30)
+                          .map((n) => renderNotifCard(n, "#dc2626"))
+                      ))}
 
-                            <p style={{ margin: "0 0 6px 0", fontWeight: 700 }}>
-                              {n.title}
-                            </p>
-                            <p style={{ margin: "0 0 8px 0" }}>{n.message}</p>
-                            <p
-                              style={{
-                                margin: 0,
-                                fontSize: 12,
-                                fontWeight: 700,
-                                color: n.read ? "#64748b" : "#dc2626",
-                              }}
-                            >
-                              {n.read ? "✓ Sudah dibaca" : "🔴 Belum dibaca"}
-                            </p>
-
-                            {!n.read && (
-                              <button
-                                style={{
-                                  marginTop: 10,
-                                  border: "none",
-                                  borderRadius: 10,
-                                  padding: "8px 12px",
-                                  background: "#16a34a",
-                                  color: "white",
-                                  fontWeight: 700,
-                                  cursor: "pointer",
-                                }}
-                                onClick={() => markAdminNotifRead(n.id)}
-                              >
-                                Tandai Dibaca
-                              </button>
-                            )}
-                            <button
-                              style={{
-                                marginTop: 8,
-                                marginLeft: 8,
-                                border: "none",
-                                borderRadius: 10,
-                                padding: "8px 12px",
-                                background: "#dc2626",
-                                color: "white",
-                                fontWeight: 700,
-                                cursor: "pointer",
-                              }}
-                              onClick={() => deleteAdminNotif(n.id)}
-                            >
-                              Hapus
-                            </button>
-                          </DataCard>
-                        ))
-                      )}
-                    </>
-                  )}
-
-                  {openNotifGroup === "bayar" && (
-                    <>
-                      {notifBayarBonus.length === 0 ? (
-                        <p>Tidak ada notifikasi.</p>
+                    {openNotifGroup === "bayar" &&
+                      (notifBayarBonus.length === 0 ? (
+                        <p
+                          style={{
+                            margin: 0,
+                            color: "#94a3b8",
+                            fontSize: 13,
+                          }}
+                        >
+                          Tidak ada notifikasi.
+                        </p>
                       ) : (
-                        notifBayarBonus.slice(0, 30).map((n) => (
-                          <DataCard key={n.id}>
-                            <input
-                              type="checkbox"
-                              checked={selectedAdminNotifIds.includes(n.id)}
-                              onChange={() => toggleSelectNotif(n.id)}
-                            />
-
-                            <p style={{ margin: "0 0 6px 0", fontWeight: 700 }}>
-                              {n.title}
-                            </p>
-                            <p style={{ margin: "0 0 8px 0" }}>{n.message}</p>
-                            <p
-                              style={{
-                                margin: 0,
-                                fontSize: 12,
-                                fontWeight: 700,
-                                color: n.read ? "#64748b" : "#16a34a",
-                              }}
-                            >
-                              {n.read ? "✓ Sudah dibaca" : "🟢 Belum dibaca"}
-                            </p>
-
-                            {!n.read && (
-                              <button
-                                style={{
-                                  marginTop: 10,
-                                  border: "none",
-                                  borderRadius: 10,
-                                  padding: "8px 12px",
-                                  background: "#16a34a",
-                                  color: "white",
-                                  fontWeight: 700,
-                                  cursor: "pointer",
-                                }}
-                                onClick={() => markAdminNotifRead(n.id)}
-                              >
-                                Tandai Dibaca
-                              </button>
-                            )}
-                            <button
-                              style={{
-                                marginTop: 8,
-                                marginLeft: 8,
-                                border: "none",
-                                borderRadius: 10,
-                                padding: "8px 12px",
-                                background: "#dc2626",
-                                color: "white",
-                                fontWeight: 700,
-                                cursor: "pointer",
-                              }}
-                              onClick={() => deleteAdminNotif(n.id)}
-                            >
-                              Hapus
-                            </button>
-                          </DataCard>
-                        ))
-                      )}
-                    </>
-                  )}
-                </SectionCard>
+                        notifBayarBonus
+                          .slice(0, 30)
+                          .map((n) => renderNotifCard(n, "#16a34a"))
+                      ))}
+                  </SectionCard>
+                </div>
               )}
             </div>
 
+            {/* Pendaftaran Baru */}
             <div>
-              <div
-                style={adminToggle}
+              <AdminToggle
+                label="Pendaftaran Baru"
+                badge={registrationRows.length}
+                isOpen={openSection === "daftar"}
                 onClick={() =>
                   setOpenSection(openSection === "daftar" ? null : "daftar")
                 }
-              >
-                📥 Pendaftaran Baru
-              </div>
-
+              />
               {openSection === "daftar" && (
-                <SectionCard title="📥 Pendaftaran Baru">
-                  {registrationRows.length === 0 ? (
-                    <p>Tidak ada pendaftaran baru.</p>
-                  ) : (
-                    registrationRows.map((u) => {
-                      const siapApprove = u.sudahBayar && u.paymentRequestSent;
-                      return (
-                        <DataCard key={u.id}>
-                          <p style={{ margin: "0 0 6px 0", fontWeight: 700 }}>
-                            {u.namaLengkap}
-                          </p>
-                          <p style={{ margin: "4px 0" }}>{u.email}</p>
-                          <p style={{ margin: "4px 0" }}>Paket: {u.paket}</p>
-                          <p style={{ margin: "4px 0" }}>
-                            Tanggal Order:{" "}
-                            {formatDateTime(u.registrationCreatedAt)}
-                          </p>
-
-                          {siapApprove ? (
-                            <ActionButton
-                              color="#16a34a"
-                              onClick={() => approveRegistration(u)}
-                            >
-                              Approve
-                            </ActionButton>
-                          ) : (
-                            <ActionButton color="#cbd5e1" textColor="#475569">
-                              Menunggu customer
-                            </ActionButton>
-                          )}
-                        </DataCard>
-                      );
-                    })
-                  )}
-                </SectionCard>
+                <div style={{ marginTop: 10 }}>
+                  <SectionCard title="Pendaftaran Baru">
+                    {registrationRows.length === 0 ? (
+                      <p
+                        style={{
+                          margin: 0,
+                          color: "#94a3b8",
+                          fontSize: 13,
+                        }}
+                      >
+                        Tidak ada pendaftaran baru.
+                      </p>
+                    ) : (
+                      registrationRows.map((u) => {
+                        const siapApprove =
+                          u.sudahBayar && u.paymentRequestSent;
+                        return (
+                          <DataCard key={u.id}>
+                            <div style={dataHeader}>
+                              <p style={dataName}>{u.namaLengkap}</p>
+                              <StatusBadge
+                                status={siapApprove ? "pending" : "pending"}
+                              />
+                            </div>
+                            <InfoRow label="Email" value={u.email} />
+                            <InfoRow label="Paket" value={u.paket} />
+                            <InfoRow
+                              label="Tgl Order"
+                              value={formatDateTime(u.registrationCreatedAt)}
+                            />
+                            <div style={{ marginTop: 10 }}>
+                              {siapApprove ? (
+                                <ActionButton
+                                  color="#16a34a"
+                                  onClick={() => approveRegistration(u)}
+                                >
+                                  Approve
+                                </ActionButton>
+                              ) : (
+                                <ActionButton
+                                  color="#e2e8f0"
+                                  textColor="#475569"
+                                >
+                                  Menunggu customer
+                                </ActionButton>
+                              )}
+                            </div>
+                          </DataCard>
+                        );
+                      })
+                    )}
+                  </SectionCard>
+                </div>
               )}
             </div>
 
+            {/* Update Paket */}
             <div>
-              <div
-                style={adminToggle}
+              <AdminToggle
+                label="Update Paket"
+                badge={updateRows.length}
+                isOpen={openSection === "update"}
                 onClick={() =>
                   setOpenSection(openSection === "update" ? null : "update")
                 }
-              >
-                🔄 Update Paket
-              </div>
-
+              />
               {openSection === "update" && (
-                <SectionCard title="🔄 Update Paket">
-                  {updateRows.length === 0 ? (
-                    <p>Tidak ada permintaan update paket.</p>
-                  ) : (
-                    updateRows.map((u) => (
-                      <DataCard key={u.id}>
-                        <p style={{ margin: "0 0 6px 0", fontWeight: 700 }}>
-                          {u.namaLengkap}
-                        </p>
-                        <p style={{ margin: "4px 0" }}>{u.email}</p>
-                        <p style={{ margin: "4px 0" }}>
-                          Update ke: {u.upgradePackage}
-                        </p>
-                        <p style={{ margin: "4px 0" }}>
-                          Tanggal Request: {formatDateTime(u.upgradeCreatedAt)}
-                        </p>
-                        <ActionButton
-                          color="#2563eb"
-                          onClick={() => approveUpgrade(u)}
-                        >
-                          Approve Update
-                        </ActionButton>
-                      </DataCard>
-                    ))
-                  )}
-                </SectionCard>
+                <div style={{ marginTop: 10 }}>
+                  <SectionCard title="Update Paket">
+                    {updateRows.length === 0 ? (
+                      <p
+                        style={{
+                          margin: 0,
+                          color: "#94a3b8",
+                          fontSize: 13,
+                        }}
+                      >
+                        Tidak ada permintaan update paket.
+                      </p>
+                    ) : (
+                      updateRows.map((u) => (
+                        <DataCard key={u.id}>
+                          <div style={dataHeader}>
+                            <p style={dataName}>{u.namaLengkap}</p>
+                          </div>
+                          <InfoRow label="Email" value={u.email} />
+                          <InfoRow
+                            label="Update ke"
+                            value={u.upgradePackage}
+                            accent="#2563eb"
+                          />
+                          <InfoRow
+                            label="Tgl Request"
+                            value={formatDateTime(u.upgradeCreatedAt)}
+                          />
+                          <div style={{ marginTop: 10 }}>
+                            <ActionButton
+                              color="#2563eb"
+                              onClick={() => approveUpgrade(u)}
+                            >
+                              Approve Update
+                            </ActionButton>
+                          </div>
+                        </DataCard>
+                      ))
+                    )}
+                  </SectionCard>
+                </div>
               )}
             </div>
 
+            {/* Tabel Komisi */}
             <div>
-              <div
-                style={adminToggle}
+              <AdminToggle
+                label="Tabel Komisi"
+                badge={komisiRows.length}
+                isOpen={openSection === "komisi"}
                 onClick={() =>
                   setOpenSection(openSection === "komisi" ? null : "komisi")
                 }
-              >
-                💰 Tabel Komisi
-              </div>
-
+              />
               {openSection === "komisi" && (
-                <SectionCard title="💰 Tabel Komisi">
-                  {komisiRows.length === 0 ? (
-                    <p>Belum ada komisi.</p>
-                  ) : (
-                    komisiRows.map((row) => (
-                      <DataCard key={row.id}>
-                        <p style={{ margin: "0 0 6px 0", fontWeight: 700 }}>
-                          {row.nama}
-                        </p>
-                        <p style={{ margin: "4px 0" }}>Dari: {row.dari}</p>
-                        <p style={{ margin: "4px 0" }}>
-                          Paket: {row.paketBeli}
-                        </p>
-                        <p style={{ margin: "4px 0" }}>
-                          Rekening: {row.bankNomorRekening || "-"}
-                        </p>
-                        <button
-                          onClick={() =>
-                            navigator.clipboard.writeText(
-                              row.bankNomorRekening || ""
-                            )
-                          }
-                          style={{
-                            padding: "6px 12px",
-                            borderRadius: 8,
-                            background: "#2563eb",
-                            color: "white",
-                            border: "none",
-                            marginBottom: 8,
-                            cursor: "pointer",
-                          }}
-                        >
-                          Copy Rekening
-                        </button>
-                        <p style={{ margin: "4px 0" }}>Sumber: {row.sumber}</p>
-                        <p style={{ margin: "4px 0" }}>
-                          Komisi: {formatRp(row.jumlah)}
-                        </p>
-                        <p style={{ margin: "4px 0" }}>
-                          Tanggal: {formatDateTime(row.createdAt)}
-                        </p>
-                      </DataCard>
-                    ))
-                  )}
-                </SectionCard>
+                <div style={{ marginTop: 10 }}>
+                  <SectionCard title="Tabel Komisi">
+                    {komisiRows.length === 0 ? (
+                      <p
+                        style={{
+                          margin: 0,
+                          color: "#94a3b8",
+                          fontSize: 13,
+                        }}
+                      >
+                        Belum ada komisi.
+                      </p>
+                    ) : (
+                      komisiRows.map((row) => (
+                        <DataCard key={row.id}>
+                          <div style={dataHeader}>
+                            <p style={dataName}>{row.nama}</p>
+                            <span
+                              style={{
+                                fontSize: 13,
+                                fontWeight: 700,
+                                color: "#16a34a",
+                              }}
+                            >
+                              {formatRp(row.jumlah)}
+                            </span>
+                          </div>
+                          <InfoRow label="Dari" value={row.dari} />
+                          <InfoRow label="Paket" value={row.paketBeli} />
+                          <InfoRow
+                            label="Rekening"
+                            value={row.bankNomorRekening || "-"}
+                          />
+                          <InfoRow label="Sumber" value={row.sumber} />
+                          <InfoRow
+                            label="Tanggal"
+                            value={formatDateTime(row.createdAt)}
+                          />
+                          <div style={{ marginTop: 10 }}>
+                            <ActionButton
+                              color="#2563eb"
+                              onClick={() =>
+                                copyText(
+                                  row.bankNomorRekening || "",
+                                  "Rekening disalin"
+                                )
+                              }
+                            >
+                              Copy Rekening
+                            </ActionButton>
+                          </div>
+                        </DataCard>
+                      ))
+                    )}
+                  </SectionCard>
+                </div>
               )}
             </div>
 
+            {/* Bonus Referral */}
             <div>
-              <div
-                style={adminToggle}
+              <AdminToggle
+                label="Bonus Referral"
+                badge={bonusRows.length}
+                isOpen={openSection === "bonus"}
                 onClick={() =>
                   setOpenSection(openSection === "bonus" ? null : "bonus")
                 }
-              >
-                👥 Bonus Referral
-              </div>
-
+              />
               {openSection === "bonus" && (
-                <SectionCard title="👥 Bonus Referral">
-                  {bonusRows.length === 0 ? (
-                    <p>Tidak ada bonus yang siap dibayar.</p>
-                  ) : (
-                    bonusRows.map((u) => (
-                      <DataCard key={u.id}>
-                        <p style={{ margin: "0 0 6px 0", fontWeight: 700 }}>
-                          {u.namaLengkap}
-                        </p>
-
-                        <p style={{ margin: "4px 0" }}>Email: {u.email}</p>
-
-                        <p style={{ margin: "4px 0" }}>
-                          Rekening: {u.bankNomorRekening || "-"}
-                        </p>
-
-                        <p style={{ margin: "4px 0" }}>
-                          Total Referral: {u.jumlahRekrut || 0}
-                        </p>
-
-                        <p style={{ margin: "4px 0" }}>
-                          Bonus siap dibayar:{" "}
-                          {formatRp((u.bonusQueue || 0) * 100000)}
-                        </p>
-
-                        <button
-                          style={{
-                            marginTop: 6,
-                            marginRight: 8,
-                            padding: "8px 12px",
-                            borderRadius: 8,
-                            border: "none",
-                            background: "#2563eb",
-                            color: "white",
-                            cursor: "pointer",
-                          }}
-                          onClick={() =>
-                            navigator.clipboard.writeText(
-                              u.bankNomorRekening || "-"
-                            )
-                          }
-                        >
-                          Copy Rekening
-                        </button>
-
-                        <ActionButton
-                          color="#d97706"
-                          onClick={() => approveBonus(u)}
-                        >
-                          Approve Bonus 100k
-                        </ActionButton>
-                      </DataCard>
-                    ))
-                  )}
-                </SectionCard>
+                <div style={{ marginTop: 10 }}>
+                  <SectionCard title="Bonus Referral">
+                    {bonusRows.length === 0 ? (
+                      <p
+                        style={{
+                          margin: 0,
+                          color: "#94a3b8",
+                          fontSize: 13,
+                        }}
+                      >
+                        Tidak ada bonus yang siap dibayar.
+                      </p>
+                    ) : (
+                      bonusRows.map((u) => (
+                        <DataCard key={u.id}>
+                          <div style={dataHeader}>
+                            <p style={dataName}>{u.namaLengkap}</p>
+                            <span
+                              style={{
+                                fontSize: 13,
+                                fontWeight: 700,
+                                color: "#d97706",
+                              }}
+                            >
+                              {formatRp((u.bonusQueue || 0) * 100000)}
+                            </span>
+                          </div>
+                          <InfoRow label="Email" value={u.email} />
+                          <InfoRow
+                            label="Rekening"
+                            value={u.bankNomorRekening || "-"}
+                          />
+                          <InfoRow
+                            label="Total Referral"
+                            value={`${u.jumlahRekrut || 0} orang`}
+                          />
+                          <div
+                            style={{
+                              display: "flex",
+                              gap: 8,
+                              flexWrap: "wrap",
+                              marginTop: 10,
+                            }}
+                          >
+                            <ActionButton
+                              color="#2563eb"
+                              onClick={() =>
+                                copyText(
+                                  u.bankNomorRekening || "",
+                                  "Rekening disalin"
+                                )
+                              }
+                            >
+                              Copy Rekening
+                            </ActionButton>
+                            <ActionButton
+                              color="#d97706"
+                              onClick={() => approveBonus(u)}
+                            >
+                              Approve Bonus 100k
+                            </ActionButton>
+                          </div>
+                        </DataCard>
+                      ))
+                    )}
+                  </SectionCard>
+                </div>
               )}
             </div>
 
+            {/* Penarikan */}
             <div>
-              <div
-                style={adminToggle}
+              <AdminToggle
+                label="Penarikan"
+                badge={withdrawRows.length}
+                isOpen={openSection === "withdraw"}
                 onClick={() =>
-                  setOpenSection(openSection === "withdraw" ? null : "withdraw")
+                  setOpenSection(
+                    openSection === "withdraw" ? null : "withdraw"
+                  )
                 }
-              >
-                💸 Penarikan
-              </div>
-
+              />
               {openSection === "withdraw" && (
-                <SectionCard title="💸 Penarikan">
-                  {withdrawRows.length === 0 ? (
-                    <p>Tidak ada penarikan pending.</p>
-                  ) : (
-                    withdrawRows.map((u) => (
-                      <DataCard key={u.id}>
-                        <p style={{ margin: "0 0 6px 0", fontWeight: 700 }}>
-                          {u.namaLengkap}
-                        </p>
-
-                        <p style={{ margin: "4px 0" }}>Email: {u.email}</p>
-
-                        <p style={{ margin: "4px 0" }}>
-                          Rekening: {u.bankNomorRekening || "-"}
-                        </p>
-
-                        <button
-                          onClick={() =>
-                            navigator.clipboard.writeText(
-                              u.bankNomorRekening || ""
-                            )
-                          }
-                          style={{
-                            padding: "6px 12px",
-                            borderRadius: 8,
-                            background: "#2563eb",
-                            color: "white",
-                            border: "none",
-                            marginBottom: 8,
-                            cursor: "pointer",
-                          }}
-                        >
-                          Copy Rekening
-                        </button>
-
-                        <p style={{ margin: "4px 0" }}>
-                          Jumlah: {formatRp(u.withdrawRequest?.amount || 0)}
-                        </p>
-
-                        <ActionButton
-                          color="#16a34a"
-                          onClick={() => approveWithdraw(u)}
-                        >
-                          Approve Penarikan
-                        </ActionButton>
-                      </DataCard>
-                    ))
-                  )}
-                </SectionCard>
+                <div style={{ marginTop: 10 }}>
+                  <SectionCard title="Penarikan">
+                    {withdrawRows.length === 0 ? (
+                      <p
+                        style={{
+                          margin: 0,
+                          color: "#94a3b8",
+                          fontSize: 13,
+                        }}
+                      >
+                        Tidak ada penarikan pending.
+                      </p>
+                    ) : (
+                      withdrawRows.map((u) => (
+                        <DataCard key={u.id}>
+                          <div style={dataHeader}>
+                            <p style={dataName}>{u.namaLengkap}</p>
+                            <span
+                              style={{
+                                fontSize: 13,
+                                fontWeight: 700,
+                                color: "#0f172a",
+                              }}
+                            >
+                              {formatRp(u.withdrawRequest?.amount || 0)}
+                            </span>
+                          </div>
+                          <InfoRow label="Email" value={u.email} />
+                          <InfoRow
+                            label="Rekening"
+                            value={u.bankNomorRekening || "-"}
+                          />
+                          <div
+                            style={{
+                              display: "flex",
+                              gap: 8,
+                              flexWrap: "wrap",
+                              marginTop: 10,
+                            }}
+                          >
+                            <ActionButton
+                              color="#2563eb"
+                              onClick={() =>
+                                copyText(
+                                  u.bankNomorRekening || "",
+                                  "Rekening disalin"
+                                )
+                              }
+                            >
+                              Copy Rekening
+                            </ActionButton>
+                            <ActionButton
+                              color="#16a34a"
+                              onClick={() => approveWithdraw(u)}
+                            >
+                              Approve Penarikan
+                            </ActionButton>
+                          </div>
+                        </DataCard>
+                      ))
+                    )}
+                  </SectionCard>
+                </div>
               )}
             </div>
 
+            {/* Semua User */}
             <div>
-              <div
-                style={adminToggle}
+              <AdminToggle
+                label="Semua User"
+                badge={usersAdmin.length}
+                isOpen={openSection === "user"}
                 onClick={() =>
                   setOpenSection(openSection === "user" ? null : "user")
                 }
-              >
-                👤 Semua User
-              </div>
-
+              />
               {openSection === "user" && (
-                <SectionCard title="👤 Semua User">
-                  <div
-                    style={{
-                      display: "flex",
-                      gap: 10,
-                      flexWrap: "wrap",
-                      marginBottom: 16,
-                    }}
-                  >
-                    <input
+                <div style={{ marginTop: 10 }}>
+                  <SectionCard title="Semua User">
+                    <div
                       style={{
-                        minWidth: 220,
-                        flex: 1,
-                        padding: 12,
-                        border: "1px solid #cbd5e1",
-                        borderRadius: 10,
+                        display: "flex",
+                        gap: 8,
+                        flexWrap: "wrap",
+                        marginBottom: 14,
                       }}
-                      placeholder="Cari nama / email / referral..."
-                      value={search}
-                      onChange={(e) => setSearch(e.target.value)}
-                    />
-
-                    <select
-                      style={{
-                        minWidth: 180,
-                        padding: 12,
-                        border: "1px solid #cbd5e1",
-                        borderRadius: 10,
-                      }}
-                      value={filterPaket}
-                      onChange={(e) => setFilterPaket(e.target.value)}
                     >
-                      <option value="all">Semua Paket</option>
-                      <option value="Standar">Standar</option>
-                      <option value="Premium">Premium</option>
-                      <option value="Gold">Gold</option>
-                    </select>
-                  </div>
+                      <input
+                        style={{ ...lightInput, flex: 1, minWidth: 220 }}
+                        placeholder="Cari nama / email / referral..."
+                        value={search}
+                        onChange={(e) => setSearch(e.target.value)}
+                      />
+                      <select
+                        style={{ ...lightInput, width: "auto", minWidth: 160 }}
+                        value={filterPaket}
+                        onChange={(e) => setFilterPaket(e.target.value)}
+                      >
+                        <option value="all">Semua Paket</option>
+                        <option value="Standar">Standar</option>
+                        <option value="Premium">Premium</option>
+                        <option value="Gold">Gold</option>
+                      </select>
+                    </div>
 
-                  {filteredCustomers.length === 0 ? (
-                    <p>Belum ada data user.</p>
-                  ) : (
-                    filteredCustomers.map((u) => (
-                      <DataCard key={u.id}>
-                        <p style={{ margin: "0 0 6px 0", fontWeight: 700 }}>
-                          {u.namaLengkap}
-                        </p>
-                        <p style={{ margin: "4px 0" }}>Email: {u.email}</p>
-                        <p style={{ margin: "4px 0" }}>No HP: {u.noHp}</p>
-                        <p style={{ margin: "4px 0" }}>
-                          Bank/Rekening: {u.bankNomorRekening || "-"}
-                        </p>
-                        <p style={{ margin: "4px 0" }}>Paket: {u.paket}</p>
-                        <p style={{ margin: "4px 0" }}>Status: {u.status}</p>
-                        <p style={{ margin: "4px 0" }}>
-                          Referral Code: {u.referralCode}
-                        </p>
-                        <p style={{ margin: "4px 0" }}>
-                          Referred By: {safe(u.referredBy)}
-                        </p>
-                        <p style={{ margin: "4px 0" }}>
-                          Jumlah Rekrut: {u.jumlahRekrut || 0}
-                        </p>
-                        <p style={{ margin: "4px 0" }}>
-                          Komisi Saldo: {formatRp(u.komisiSaldo || 0)}
-                        </p>
-                        <p style={{ margin: "4px 0" }}>
-                          Progress Bonus: {u.bonusProgress || 0}/10
-                        </p>
-                        <p style={{ margin: "4px 0" }}>
-                          Bonus Queue: {u.bonusQueue || 0}
-                        </p>
-                        <p style={{ margin: "4px 0" }}>
-                          Tanggal Order:{" "}
-                          {formatDateTime(u.registrationCreatedAt)}
-                        </p>
-                        <p style={{ margin: "4px 0" }}>
-                          Approved At: {formatDateTime(u.approvedAt)}
-                        </p>
+                    {filteredCustomers.length === 0 ? (
+                      <p
+                        style={{
+                          margin: 0,
+                          color: "#94a3b8",
+                          fontSize: 13,
+                        }}
+                      >
+                        Belum ada data user.
+                      </p>
+                    ) : (
+                      filteredCustomers.map((u) => (
+                        <DataCard key={u.id}>
+                          <div style={dataHeader}>
+                            <p style={dataName}>{u.namaLengkap}</p>
+                            <StatusBadge status={u.status} />
+                          </div>
+                          <InfoRow label="Email" value={u.email} />
+                          <InfoRow label="No HP" value={u.noHp} />
+                          <InfoRow
+                            label="Bank/Rekening"
+                            value={u.bankNomorRekening || "-"}
+                          />
+                          <InfoRow label="Paket" value={u.paket} />
+                          <InfoRow
+                            label="Referral Code"
+                            value={u.referralCode}
+                          />
+                          <InfoRow
+                            label="Referred By"
+                            value={safe(u.referredBy)}
+                          />
+                          <InfoRow
+                            label="Jumlah Rekrut"
+                            value={u.jumlahRekrut || 0}
+                          />
+                          <InfoRow
+                            label="Komisi Saldo"
+                            value={formatRp(u.komisiSaldo || 0)}
+                            accent="#16a34a"
+                          />
+                          <InfoRow
+                            label="Progress Bonus"
+                            value={`${u.bonusProgress || 0}/10`}
+                          />
+                          <InfoRow
+                            label="Bonus Queue"
+                            value={u.bonusQueue || 0}
+                          />
+                          <InfoRow
+                            label="Tgl Order"
+                            value={formatDateTime(u.registrationCreatedAt)}
+                          />
+                          <InfoRow
+                            label="Approved At"
+                            value={formatDateTime(u.approvedAt)}
+                          />
 
-                        <div
-                          style={{
-                            display: "flex",
-                            gap: 8,
-                            flexWrap: "wrap",
-                            marginTop: 10,
-                          }}
-                        >
-                          <ActionButton
-                            color="#2563eb"
-                            onClick={() => copyText(u.email, "Email disalin")}
+                          <div
+                            style={{
+                              display: "flex",
+                              gap: 8,
+                              flexWrap: "wrap",
+                              marginTop: 12,
+                              paddingTop: 12,
+                              borderTop: "1px solid #e2e8f0",
+                            }}
                           >
-                            Copy Email
-                          </ActionButton>
-                          <ActionButton
-                            color="#475569"
-                            onClick={() =>
-                              copyText(u.noHp || "", "No HP disalin")
-                            }
-                          >
-                            Copy No HP
-                          </ActionButton>
-                          <ActionButton
-                            color="#0f172a"
-                            onClick={() =>
-                              copyText(
-                                u.bankNomorRekening || "",
-                                "Rekening disalin"
-                              )
-                            }
-                          >
-                            Copy Rekening
-                          </ActionButton>
-                          <ActionButton
-                            color="#dc2626"
-                            onClick={() => deleteUser(u.id)}
-                          >
-                            Hapus
-                          </ActionButton>
-                        </div>
-                      </DataCard>
-                    ))
-                  )}
-                </SectionCard>
+                            <ActionButton
+                              color="#2563eb"
+                              onClick={() =>
+                                copyText(u.email, "Email disalin")
+                              }
+                            >
+                              Copy Email
+                            </ActionButton>
+                            <ActionButton
+                              color="#475569"
+                              onClick={() =>
+                                copyText(u.noHp || "", "No HP disalin")
+                              }
+                            >
+                              Copy No HP
+                            </ActionButton>
+                            <ActionButton
+                              color="#0f172a"
+                              onClick={() =>
+                                copyText(
+                                  u.bankNomorRekening || "",
+                                  "Rekening disalin"
+                                )
+                              }
+                            >
+                              Copy Rekening
+                            </ActionButton>
+                            <ActionButton
+                              color="#dc2626"
+                              onClick={() => deleteUser(u.id)}
+                            >
+                              Hapus
+                            </ActionButton>
+                          </div>
+                        </DataCard>
+                      ))
+                    )}
+                  </SectionCard>
+                </div>
               )}
             </div>
           </div>
@@ -3079,34 +3302,78 @@ Mohon dibantu ya kak 🙏`
 }
 
 // ================= SMALL COMPONENTS =================
-function StatCard({ title, value }) {
+function StatCard({ title, value, accent }) {
   return (
     <div
       style={{
         background: "white",
-        borderRadius: 18,
+        borderRadius: 14,
         padding: 16,
-        boxShadow: "0 12px 30px rgba(15,23,42,0.08)",
+        border: "1px solid #e2e8f0",
+        boxShadow: "0 1px 2px rgba(15,23,42,0.04)",
       }}
     >
-      <h3 style={{ marginTop: 0 }}>{title}</h3>
-      <p style={{ margin: 0, fontSize: 28, fontWeight: 800 }}>{value}</p>
+      <p
+        style={{
+          margin: 0,
+          fontSize: 11,
+          color: "#64748b",
+          fontWeight: 700,
+          letterSpacing: 0.4,
+          textTransform: "uppercase",
+        }}
+      >
+        {title}
+      </p>
+      <p
+        style={{
+          margin: "8px 0 0 0",
+          fontSize: 22,
+          fontWeight: 800,
+          color: accent || "#0f172a",
+          lineHeight: 1.2,
+        }}
+      >
+        {value}
+      </p>
     </div>
   );
 }
 
-function SectionCard({ title, children }) {
+function SectionCard({ title, children, right }) {
   return (
     <div
       style={{
         background: "white",
-        borderRadius: 18,
-        padding: 16,
-        marginBottom: 18,
-        boxShadow: "0 12px 30px rgba(15,23,42,0.08)",
+        borderRadius: 16,
+        padding: 18,
+        marginBottom: 14,
+        border: "1px solid #e2e8f0",
+        boxShadow: "0 1px 2px rgba(15,23,42,0.04)",
       }}
     >
-      <h2 style={{ marginTop: 0 }}>{title}</h2>
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          gap: 12,
+          flexWrap: "wrap",
+          marginBottom: 14,
+        }}
+      >
+        <h2
+          style={{
+            margin: 0,
+            fontSize: 16,
+            fontWeight: 700,
+            color: "#0f172a",
+          }}
+        >
+          {title}
+        </h2>
+        {right}
+      </div>
       {children}
     </div>
   );
@@ -3116,10 +3383,11 @@ function DataCard({ children }) {
   return (
     <div
       style={{
+        background: "#f8fafc",
         border: "1px solid #e2e8f0",
-        borderRadius: 14,
+        borderRadius: 12,
         padding: 14,
-        marginBottom: 12,
+        marginBottom: 10,
       }}
     >
       {children}
@@ -3136,12 +3404,122 @@ function ActionButton({ children, onClick, color, textColor }) {
         color: textColor || "white",
         border: "none",
         borderRadius: 10,
-        padding: "10px 14px",
+        padding: "9px 14px",
         fontWeight: 700,
+        fontSize: 13,
         cursor: onClick ? "pointer" : "not-allowed",
       }}
     >
       {children}
+    </button>
+  );
+}
+
+function InfoRow({ label, value, accent }) {
+  return (
+    <div
+      style={{
+        display: "flex",
+        justifyContent: "space-between",
+        alignItems: "center",
+        gap: 10,
+        padding: "6px 0",
+        fontSize: 13,
+      }}
+    >
+      <span style={{ color: "#64748b" }}>{label}</span>
+      <span
+        style={{
+          color: accent || "#0f172a",
+          fontWeight: 600,
+          textAlign: "right",
+          wordBreak: "break-word",
+        }}
+      >
+        {value}
+      </span>
+    </div>
+  );
+}
+
+function StatusBadge({ status }) {
+  const map = {
+    approved: { bg: "#dcfce7", color: "#15803d", label: "Aktif" },
+    pending: { bg: "#fef3c7", color: "#a16207", label: "Menunggu" },
+    rejected: { bg: "#fee2e2", color: "#b91c1c", label: "Ditolak" },
+  };
+  const s = map[status] || {
+    bg: "#e2e8f0",
+    color: "#475569",
+    label: status || "-",
+  };
+  return (
+    <span
+      style={{
+        background: s.bg,
+        color: s.color,
+        fontSize: 11,
+        fontWeight: 700,
+        padding: "3px 8px",
+        borderRadius: 999,
+        textTransform: "capitalize",
+      }}
+    >
+      {s.label}
+    </span>
+  );
+}
+
+function AdminToggle({ label, badge, isOpen, onClick }) {
+  return (
+    <button
+      onClick={onClick}
+      style={{
+        width: "100%",
+        background: isOpen ? "#0f172a" : "white",
+        color: isOpen ? "white" : "#0f172a",
+        border: "1px solid",
+        borderColor: isOpen ? "#0f172a" : "#e2e8f0",
+        borderRadius: 12,
+        padding: "14px 16px",
+        fontWeight: 700,
+        fontSize: 14,
+        cursor: "pointer",
+        display: "flex",
+        justifyContent: "space-between",
+        alignItems: "center",
+        gap: 10,
+        boxShadow: "0 1px 2px rgba(15,23,42,0.04)",
+        transition: "background 0.15s ease",
+      }}
+    >
+      <span style={{ display: "flex", alignItems: "center", gap: 10 }}>
+        {label}
+        {badge > 0 && (
+          <span
+            style={{
+              background: isOpen ? "#ef4444" : "#fee2e2",
+              color: isOpen ? "white" : "#b91c1c",
+              fontSize: 11,
+              fontWeight: 700,
+              padding: "2px 8px",
+              borderRadius: 999,
+            }}
+          >
+            {badge}
+          </span>
+        )}
+      </span>
+      <span
+        style={{
+          fontSize: 18,
+          transform: isOpen ? "rotate(180deg)" : "rotate(0deg)",
+          transition: "transform 0.2s ease",
+          opacity: 0.7,
+        }}
+      >
+        ⌄
+      </span>
     </button>
   );
 }
